@@ -1,0 +1,17 @@
+id: scene.woman-in-white
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l1
+node: node.galerie.floor
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  A tall old woman in ivory: tragedy or a weapon.
+choices:
+  - id: hold
+    label: "Hold her gaze."
+    effects: []

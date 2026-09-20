@@ -1,0 +1,9 @@
+id: char.mardi
+display_name: "Mardi"
+age: 12
+tier: day-player
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.mardi

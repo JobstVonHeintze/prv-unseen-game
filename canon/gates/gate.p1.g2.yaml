@@ -1,0 +1,11 @@
+id: gate.p1.g2
+name: "The gallery"
+part: 1
+order: 2
+trigger:
+  progress: {all: [flag.reached-gallery]}
+  date: {day: 2}
+scene: scene.gallery
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: null

@@ -1,0 +1,8 @@
+{
+  "name": "UNSEEN Player",
+  "short_name": "UNSEEN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1524",
+  "theme_color": "#0e1524"
+}

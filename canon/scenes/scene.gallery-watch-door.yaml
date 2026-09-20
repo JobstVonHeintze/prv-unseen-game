@@ -1,0 +1,29 @@
+id: scene.gallery-watch-door
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l2
+node: node.galerie.changing
+cast: [char.elena, char.viktor]
+tags: []
+requires:
+  phase_min: 0
+  all: [flag.watch.provoked]
+  none: []
+beat: >
+  She left the door a little open. She wanted him to see.
+spice:
+  l1: >
+    A slice of hallway. She turns her back and draws the shirt on slowly
+    enough that he cannot pretend he was not there.
+  l2: >
+    She faces the gap. Wet green, then skin, then the borrowed shirt. She
+    lets him look. She is buying the dry cloth and the way he will draw her.
+  l3: >
+    [LEVEL 3 PLACEHOLDER: hand-written] Brief: she knows he is watching
+    through the door and possibly a phone; she performs, fully explicit,
+    to impress him. Afterwards she is dressed. Currency-up, not down.
+choices:
+  - id: continue
+    label: "Button the shirt. Go down."
+    effects: []
+hooks_back: [secret.s-changing]

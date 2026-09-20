@@ -1,0 +1,66 @@
+# harness/workflow.yaml — declarative phase definitions for the factory loop.
+#
+# This file is read by `harness/run`. Each phase has:
+#   - precondition: a shell command that must exit 0 before the phase can be entered.
+#   - gate:         a shell command that must exit 0 before the phase can be left.
+#   - produces:     informational; lists files this phase typically touches.
+#
+# `harness/run advance` walks this list in order and refuses to skip
+# any phase whose `gate` fails.
+#
+# Edit this file when you genuinely change the lifecycle (rare). For
+# project-specific gate commands, edit the gate text — the schema and the
+# walker do not care what the gate does, only that it exits 0.
+#
+# Adopted from walkinglabs harness-engineering Lecture 02 (the harness
+# governs every transition).
+
+schemaVersion: 1
+project: "contrejour"
+
+phases:
+  - name: init
+    description: Validate environment and scope file before any code runs.
+    precondition: "true"
+    gate: "node harness/lib/check-feature-list.mjs"
+    produces:
+      - harness/state.json
+
+  - name: select
+    description: Bind the lifecycle to exactly one feature already marked in_progress.
+    precondition: "test -f harness/feature_list.json"
+    gate: "node harness/lib/check-feature-list.mjs && harness/run assert-active in_progress"
+    produces:
+      - harness/state.json
+
+  - name: build
+    description: Implement the active feature; deliverable checks run before verification.
+    precondition: "harness/run assert-phase select build"
+    gate: "harness/run assert-active in_progress"
+    produces: []
+
+  # Rationale: production boundary-gate post-mortem (F5) — the review gate
+  # used to assert only that a review FILE exists, never that its claims were
+  # true. The verify gate now also runs the deterministic boundary ratchet, and
+  # the review gate requires the review registered for the active feature to
+  # cite the evidence artifact. Unrelated architecture notes cannot satisfy it.
+  - name: verify
+    description: Smoke + evidence + boundary ratchet verification. The hard gate.
+    precondition: "harness/run assert-phase build verify"
+    gate: "bash scripts/smoke.sh && node harness/lib/check-feature-list.mjs --evidence-required && harness/run assert-active done && node harness/lib/check-boundaries.mjs --check --json harness/boundaries.report.json"
+    produces:
+      - harness/state.json
+
+  - name: review
+    description: The explicitly registered review reconciles the active feature.
+    precondition: "harness/run assert-phase verify review"
+    gate: "harness/run assert-review && test -f harness/boundaries.report.json && harness/run assert-review-cites boundaries.report.json"
+    produces:
+      - harness/state.json
+
+  - name: closeout
+    description: Close verified and reviewed work; commit authorization is separate.
+    precondition: "harness/run assert-phase review closeout"
+    gate: "harness/run assert-active done && harness/run assert-review"
+    produces:
+      - harness/state.json

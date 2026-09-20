@@ -1,0 +1,9 @@
+id: witness.noor
+character: char.noor
+observes:
+  nodes: [node.ascend.lobby, node.ascend.desk]
+  kinds: [arrival, capture]
+tells:
+  - to: witness.dragan
+    delay_evenings: 1
+    probability: 1.0

@@ -1,0 +1,8 @@
+id: loc.lavomatic
+display_name: "Lavomatic 24"
+levels:
+  l1: {name: Floor, phase: 0}
+nodes:
+  - id: node.lavomatic.floor
+    level: l1
+    facts: []

@@ -1,0 +1,5 @@
+id: belief.b2
+statement: She is the girl who died here. She is Livia.
+part: 1
+fed_by: []
+broken_by: [gate.p1.g7]

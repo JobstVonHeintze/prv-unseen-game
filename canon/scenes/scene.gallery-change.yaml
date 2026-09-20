@@ -1,0 +1,35 @@
+id: scene.gallery-change
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l2
+node: node.galerie.changing
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: [flag.gallery-upstairs]
+  none: []
+beat: >
+  A narrow room above the white cube. A rail of spare shirts. The door does
+  not lock. A step on the stair — that walk is Viktor's.
+choices:
+  - id: change-quick
+    label: "Change quickly. Keep the door to."
+    effects: []
+  - id: linger
+    label: "Take her time. He is on the stair."
+    effects:
+      - set: flag.recorded.changing
+      - set: flag.watch.realized
+      - set: flag.seen.viktor
+      - bank: secret.s-changing
+      - enter: scene.gallery-watch-stair
+  - id: door-ajar
+    label: "Leave the door a little open."
+    effects:
+      - set: flag.recorded.changing
+      - set: flag.watch.provoked
+      - set: flag.used.viktor
+      - add: { meter.celeste: 1 }
+      - bank: secret.s-changing
+      - enter: scene.gallery-watch-door

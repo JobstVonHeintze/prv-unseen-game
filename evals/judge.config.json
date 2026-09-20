@@ -1,0 +1,9 @@
+{
+  "$comment": "Sampled trajectory judge. Disabled until you hand-label 10 transcripts against JUDGE_RUBRIC.md and write judge.calibration.json with agreement >= calibrationMinAgreement. Never a merge gate.",
+  "enabled": false,
+  "requireCalibration": true,
+  "calibrationMinAgreement": 0.8,
+  "sampleRate": 0.2,
+  "failOnLowScore": false,
+  "command": ["claude", "-p", "__PROMPT__", "--output-format", "json"]
+}

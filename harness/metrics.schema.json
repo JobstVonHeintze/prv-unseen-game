@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/speckit-darkfactory-setup/metrics.schema.json",
+  "title": "darkfactory process-health metric record",
+  "description": "Versioned, per-phase process-health record appended to harness/metrics/<phase>.jsonl by harness/lib/emit-metrics.mjs. Source: production boundary-gate post-mortem F2/F7 — docs/decisions/2026-05-30-boundary-gate-postmortem.md. The central observatory aggregates these across many projects into a fleet trend; this schema and the observatory MUST stay in sync.",
+  "type": "object",
+  "required": ["schemaVersion", "ts", "sha", "project", "layer", "phase", "metrics"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "ts": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+    "sha": { "type": "string", "minLength": 1 },
+    "project": { "type": "string", "minLength": 1 },
+    "layer": { "type": "string", "minLength": 1 },
+    "phase": { "type": "string", "enum": ["init", "select", "build", "verify", "review", "closeout", "commit", "unknown"] },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "boundary_violations_strict",
+        "boundary_violations_verbatim",
+        "boundary_forbidden_edges",
+        "boundary_classes",
+        "loc",
+        "modules",
+        "boundary_violations_per_kloc",
+        "boundary_violations_per_module",
+        "smoke_pass",
+        "review_completion_ratio",
+        "gate_receipts_present"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "boundary_status": { "type": "string", "enum": ["checked", "skipped", "missing"] },
+        "boundary_reason": { "type": ["string", "null"] },
+        "boundary_violations_strict": { "type": ["integer", "null"], "minimum": 0 },
+        "boundary_violations_verbatim": { "type": ["integer", "null"], "minimum": 0 },
+        "boundary_forbidden_edges": { "type": ["integer", "null"], "minimum": 0 },
+        "boundary_classes": {
+          "type": "object",
+          "required": ["policy_gap", "misplaced_contract", "infra_leak", "peer_coupling"],
+          "properties": {
+            "policy_gap": { "type": ["integer", "null"], "minimum": 0 },
+            "misplaced_contract": { "type": ["integer", "null"], "minimum": 0 },
+            "infra_leak": { "type": ["integer", "null"], "minimum": 0 },
+            "peer_coupling": { "type": ["integer", "null"], "minimum": 0 }
+          }
+        },
+        "loc": { "type": "integer", "minimum": 0 },
+        "loc_truncated": { "type": "boolean", "description": "true when the LOC walk hit its file cap; loc is then a lower bound." },
+        "modules": { "type": "integer", "minimum": 0 },
+        "boundary_violations_per_kloc": { "type": ["number", "null"], "minimum": 0 },
+        "boundary_violations_per_module": { "type": ["number", "null"], "minimum": 0 },
+        "smoke_pass": {
+          "type": ["boolean", "null"],
+          "description": "Verify-gate receipt exit 0, or SMOKE_PASS env from CI. Null when neither exists. A failing verify is recorded false even if smoke itself passed and a later conjunct failed."
+        },
+        "review_completion_ratio": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Among status=done features, share whose id appears in docs/reviews/*.md or the bound reviewArtifact. Null when no feature is done."
+        },
+        "phase_duration_ms": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Milliseconds between this phase receipt and the previous phase receipt. Null when a receipt is missing."
+        },
+        "gate_receipts_present": { "type": "boolean" }
+      }
+    },
+    "_provenance": { "type": "string" }
+  }
+}

@@ -1,0 +1,6 @@
+id: witness.cedric
+character: char.cedric
+observes:
+  nodes: [node.passage.front-door]
+  kinds: [arrival]
+tells: []

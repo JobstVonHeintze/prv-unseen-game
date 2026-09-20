@@ -1,0 +1,14 @@
+{
+  "$comment": "TEMPLATE (status=template -> skipped by the runner). The SWE-bench pattern, privately: a real task from your git history plus a hidden fail-to-pass check. Copy this directory, fill in the TODOs, set status to active. Best source: `git log --grep fix` and your post-mortems — see /eval-harvest.",
+  "id": "T-001-outcome-template",
+  "title": "TODO: one-line description of the change the agent must make",
+  "tier": "full",
+  "difficulty": "medium",
+  "kind": "outcome",
+  "tags": ["TODO"],
+  "status": "template",
+  "prompt": "TODO: the task as you would brief a developer. State the observable behavior required, not the implementation. Do NOT mention how it will be verified.",
+  "workspace": { "source": "repo" },
+  "scope": { "allowed": ["src/", "tests/", "claude-progress.md"] },
+  "timeoutSeconds": 900
+}

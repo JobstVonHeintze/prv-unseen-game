@@ -1,0 +1,72 @@
+# Private Dark Factory benchmark.
+#
+# This workflow is intentionally separate from spec-gates.yml so scheduled
+# benchmark runs do not trigger normal PR/push gates. The runner skips with
+# exit 0 until evals/benchmark/benchmark.config.json has enabled=true and
+# evals/evals.config.json has a real agent model/command.
+name: Dark Factory Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Eval tier to run (smoke, full, hidden, all)"
+        required: false
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - full
+          - hidden
+          - all
+      samples:
+        description: "Override sample count (blank = config default)"
+        required: false
+        default: ""
+        type: string
+      task:
+        description: "Optional single task id"
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Private benchmark (skips until configured)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run background benchmark
+        shell: bash
+        env:
+          BENCHMARK_TIER: ${{ inputs.tier || 'smoke' }}
+          BENCHMARK_SAMPLES: ${{ inputs.samples || '' }}
+          BENCHMARK_TASK: ${{ inputs.task || '' }}
+        run: |
+          set -euo pipefail
+          args=(--tier "$BENCHMARK_TIER")
+          if [ -n "$BENCHMARK_SAMPLES" ]; then
+            args+=(--samples "$BENCHMARK_SAMPLES")
+          fi
+          if [ -n "$BENCHMARK_TASK" ]; then
+            args+=(--task "$BENCHMARK_TASK")
+          fi
+          node evals/benchmark/run-background.mjs "${args[@]}"
+      - name: Upload benchmark summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dark-factory-benchmark
+          path: |
+            evals/benchmark/results/
+            evals/metrics/
+          if-no-files-found: warn

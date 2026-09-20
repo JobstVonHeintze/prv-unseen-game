@@ -1,0 +1,17 @@
+id: scene.lavomatic-talk
+part: 1
+slot: evening
+location: loc.lavomatic.l1
+node: node.lavomatic.floor
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Warm air. A notice board. For a minute she is simply a person.
+choices:
+  - id: sit
+    label: "Sit with the dryer."
+    effects: []

@@ -1,0 +1,32 @@
+id: scene.conduct-demand
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l1
+node: node.galerie.floor
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  She has the recording. The person it is about is waiting.
+spice:
+  l1: >
+    The tape is only a kiss, twice, two evenings. Enough to ruin a plan.
+  l2: >
+    They will hear what the room already knows. She can make them say it,
+    or make them get the same on someone else.
+  l3: >
+    [LEVEL 3 PLACEHOLDER: hand-written] Brief: the demand after a taken
+    recording, explicit proof, same two choices.
+choices:
+  - id: reveal-other
+    label: "Make them tell the other one."
+    effects:
+      - set: flag.demand.reveal-other
+  - id: film-another
+    label: "Make them get the same on someone else."
+    effects:
+      - set: flag.demand.film-another
+hooks_back: [secret.s-tilde-vip]

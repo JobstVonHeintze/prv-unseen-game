@@ -1,0 +1,9 @@
+id: char.dragan
+display_name: "Dragan Petrović"
+age: 52
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.dragan

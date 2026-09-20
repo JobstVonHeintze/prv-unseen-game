@@ -1,0 +1,17 @@
+id: scene.dalia-pulse
+part: 1
+slot: gate-internal
+location: loc.passage-des-meuniers.l1
+node: node.passage.stairwell
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Dalia takes her wrist. Seventy-two.
+choices:
+  - id: answer
+    label: "Let her take your wrist."
+    effects: []

@@ -1,0 +1,9 @@
+id: char.tilde
+display_name: "Tilde Ekström"
+age: 22
+tier: recurring
+liminal: false
+romance:
+  available: true
+  flirt_from: 2
+seen_flag: flag.seen.tilde

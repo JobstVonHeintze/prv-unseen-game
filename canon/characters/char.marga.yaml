@@ -1,0 +1,9 @@
+id: char.marga
+display_name: "Marga Winter"
+age: 58
+tier: core
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.marga

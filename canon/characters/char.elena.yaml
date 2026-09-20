@@ -1,0 +1,9 @@
+id: char.elena
+display_name: "Elena Marin"
+age: 24
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.elena

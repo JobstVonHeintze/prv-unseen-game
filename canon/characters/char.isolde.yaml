@@ -1,0 +1,9 @@
+id: char.isolde
+display_name: "Isolde Varnay"
+age: 68
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.isolde

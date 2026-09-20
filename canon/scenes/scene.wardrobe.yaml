@@ -1,0 +1,17 @@
+id: scene.wardrobe
+part: 1
+slot: gate-internal
+location: loc.passage-des-meuniers.l3
+node: node.passage.roof
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  The green dress. The pencil marks. The phone rings out.
+choices:
+  - id: open
+    label: "Open the wardrobe."
+    effects: [{set: flag.found-green-dress}]

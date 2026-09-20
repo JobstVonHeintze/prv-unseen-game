@@ -1,0 +1,17 @@
+# docs/decisions/
+
+This directory holds project decision records (one file per decision, named
+`YYYY-MM-DD-<slug>.md`). Use the template at
+`docs/templates/decision-template.md` to create new entries.
+
+Decisions are distinct from:
+
+- **plans** (`docs/plans/`) which describe *what* will be done.
+- **specs** (`specs/`) which describe *what the rules are*.
+- **reviews** (`docs/reviews/`) which describe *what was delivered*.
+
+Decisions answer *why* a particular option was chosen over alternatives.
+They are append-only: a superseded decision is marked `superseded` and
+linked from the new decision via the `Supersedes:` field.
+
+Adopted from walkinglabs harness-engineering Lecture 05.

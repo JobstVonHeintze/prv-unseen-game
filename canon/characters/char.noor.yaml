@@ -1,0 +1,9 @@
+id: char.noor
+display_name: "Noor Delvaux"
+age: 29
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.noor

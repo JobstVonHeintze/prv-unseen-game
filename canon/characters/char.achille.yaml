@@ -1,0 +1,9 @@
+id: char.achille
+display_name: "Achille Verne"
+age: 61
+tier: core
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.achille

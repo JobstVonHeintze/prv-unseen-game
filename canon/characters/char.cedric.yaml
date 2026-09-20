@@ -1,0 +1,9 @@
+id: char.cedric
+display_name: "Cédric Oury"
+age: 38
+tier: core
+liminal: true
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.cedric

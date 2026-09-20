@@ -1,0 +1,82 @@
+.DS_Store
+Thumbs.db
+
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.turbo/
+.parcel-cache/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+target/
+*.class
+*.jar
+
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+*.log
+*.tmp
+*.bak
+
+# Harness runtime state/telemetry (local lifecycle binding, process-health
+# metrics, gate-liveness receipts, boundary report). Published as CI artifacts
+# where useful — never durable scope or VCS state.
+harness/metrics/
+harness/receipts/
+harness/boundaries.report.json
+harness/state.json
+harness/state.json.tmp.*
+
+# Eval run artifacts (transcripts + JSONL results). Keep summaries you care
+# about by copying them into docs/reviews/; raw runs stay out of VCS.
+evals/results/
+evals/benchmark/results/
+evals/metrics/
+
+# Raw model-council reviewer transcripts may contain sensitive plan context.
+# Keep council-summary.md; ignore only raw provider outputs.
+docs/reviews/council/**/raw/
+
+# Documents (never commit these into project root)
+*.pdf
+*.doc
+*.docx
+
+# Machine-local navigation indexes are optional tools, never gate evidence.
+.gitnexus/
+
+# Raw host transcripts may contain tool arguments, environment output, secrets,
+# or personal data. Reviews cite durable session ids by default.
+docs/transcripts/
+
+.cache/
+
+# Runtime workspace (runs, uploaded storyboard binaries)
+data/runs/
+data/uploads/
+data/findings/
+data/storyboards/
+data/proposals/
+out/*.sqlite
+*.tsbuildinfo

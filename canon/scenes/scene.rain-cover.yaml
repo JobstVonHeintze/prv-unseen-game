@@ -1,0 +1,30 @@
+id: scene.rain-cover
+part: 1
+slot: gate-internal
+location: loc.rue-valmont.l1
+node: node.rue.street
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Only then the rain starts. The silk goes dark. She needs a door that will
+  take her.
+choices:
+  - id: gallery-door
+    label: "The gallery glass. Pull."
+    effects: []
+  - id: shop-awning
+    label: "Crowd under the shop awning."
+    effects: []
+  - id: parked-car
+    label: "Try a parked car door."
+    effects: []
+  - id: tram-stop
+    label: "The tram shelter, already full."
+    effects: []
+  - id: wait-rain
+    label: "Stand still and wait it out."
+    effects: []

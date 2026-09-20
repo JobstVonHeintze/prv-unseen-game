@@ -1,0 +1,11 @@
+id: gate.p1.g6
+name: "The wardrobe"
+part: 1
+order: 6
+trigger:
+  progress: {all: [flag.found-green-dress]}
+  date: {day: 16}
+scene: scene.wardrobe
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: null

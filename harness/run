@@ -1,0 +1,719 @@
+#!/usr/bin/env bash
+# harness/run — the factory loop runner.
+#
+# Subcommands:
+#   run init                    Run the init phase: env health + schema validate.
+#   run start <feature-id>      Mark/bind exactly one feature as in_progress.
+#   run review <path>           Register and gate this feature's review artifact.
+#   run status [--quiet]        Print current phase / last completed / history tail.
+#   run phase <name>            Run a specific phase: precondition + gate.
+#   run advance                 Walk to the next phase if its gate is green.
+#   run reset --confirm         Reset state.json to the init phase. Requires --confirm.
+#
+# Why this file exists:
+#   Markdown agent definitions are not enough on their own. This script is
+#   the runnable control plane: it enforces phase preconditions and gates
+#   that markdown alone cannot. It does NOT invoke AI tooling — agents
+#   stay in your editor; this script gates their output. See SMOKE.md and
+#   docs/architecture.md harness section.
+#
+#   Adopted from walkinglabs harness-engineering Lecture 02 (the harness
+#   governs every transition) + Lecture 09 (no declaring victory early).
+#
+# Dependencies:
+#   bash 4+, awk, git, node, the harness/* templates this generator emits.
+#   No YAML library: the parser below is purpose-built for the project's
+#   own workflow.yaml and is intentionally minimal.
+
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/.." && pwd)"
+WORKFLOW="$HERE/workflow.yaml"
+STATE="$HERE/state.json"
+PROGRESS="$ROOT/claude-progress.md"
+
+# ----------------------------------------------------------------------------
+# YAML parser (purpose-built for this workflow.yaml; no external dep).
+# ----------------------------------------------------------------------------
+# Returns a flat list of phase records separated by ASCII Unit Separator.
+# Shell gates legitimately contain `|` (for grep pipelines), so a printable
+# pipe cannot safely delimit records.
+# Multi-line values are not supported by intent — keep gates one-line.
+# ----------------------------------------------------------------------------
+parse_phases() {
+  local in_phases=0 cur_name="" cur_pre="" cur_gate=""
+  while IFS= read -r line; do
+    case "$line" in
+      "phases:"*)            in_phases=1; continue ;;
+      "  - name: "*)
+        if [ -n "$cur_name" ]; then
+          printf '%s\x1f%s\x1f%s\n' "$cur_name" "$cur_pre" "$cur_gate"
+        fi
+        cur_name="${line#"  - name: "}"
+        cur_name="${cur_name//\"/}"
+        cur_pre=""; cur_gate=""
+        ;;
+      "    precondition: "*)
+        cur_pre="${line#"    precondition: "}"
+        cur_pre="${cur_pre#\"}"; cur_pre="${cur_pre%\"}"
+        ;;
+      "    gate: "*)
+        cur_gate="${line#"    gate: "}"
+        cur_gate="${cur_gate#\"}"; cur_gate="${cur_gate%\"}"
+        ;;
+    esac
+  done < "$WORKFLOW"
+  if [ -n "$cur_name" ]; then
+    printf '%s\x1f%s\x1f%s\n' "$cur_name" "$cur_pre" "$cur_gate"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# State management. Atomic writes via tmp + mv.
+# ----------------------------------------------------------------------------
+read_current_phase() {
+  if [ ! -f "$STATE" ]; then
+    echo "init"
+    return
+  fi
+  # Pass the path as argv, never interpolate into the JS payload — paths
+  # containing quotes / parens / backslashes would otherwise break the JS
+  # parser. Same pattern as write_state and cmd_status below.
+  node -e '
+    const fs = require("fs");
+    try { console.log(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).currentPhase || "init"); }
+    catch { console.log("init"); }
+  ' "$STATE"
+}
+
+read_last_completed() {
+  if [ ! -f "$STATE" ]; then
+    echo ""
+    return
+  fi
+  node -e '
+    const fs = require("fs");
+    try { console.log(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).lastCompleted || ""); }
+    catch { console.log(""); }
+  ' "$STATE"
+}
+
+read_state_field() {
+  local field="$1"
+  if [ ! -f "$STATE" ]; then
+    echo ""
+    return
+  fi
+  node -e '
+    const fs = require("fs");
+    try {
+      const value = JSON.parse(fs.readFileSync(process.argv[1], "utf8"))[process.argv[2]];
+      console.log(value === null || value === undefined ? "" : String(value));
+    } catch {
+      console.log("");
+    }
+  ' "$STATE" "$field"
+}
+
+write_state() {
+  local current="$1" last="$2" phase_done="$3" exit_code="$4"
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  local tmp="$STATE.tmp.$$"
+  # shellcheck disable=SC2016
+  node -e '
+    const fs = require("fs");
+    const path = process.argv[1];
+    const current = process.argv[2];
+    const last = process.argv[3];
+    const phaseDone = process.argv[4];
+    const exitCode = parseInt(process.argv[5], 10);
+    const ts = process.argv[6];
+    let prev = { schemaVersion: 1, history: [] };
+    try { prev = JSON.parse(fs.readFileSync(path.replace(/\.tmp\..+$/, ""), "utf8")); } catch {}
+    const out = {
+      schemaVersion: 1,
+      currentPhase: current,
+      lastCompleted: last,
+      activeFeature: prev.activeFeature || null,
+      reviewArtifact: prev.reviewArtifact || null,
+      history: [...(prev.history || []), { phase: phaseDone, ts, exit: exitCode }].slice(-100),
+    };
+    fs.writeFileSync(path, JSON.stringify(out, null, 2) + "\n");
+  ' "$tmp" "$current" "$last" "$phase_done" "$exit_code" "$ts"
+  mv "$tmp" "$STATE"
+}
+
+set_state_context() {
+  local active="$1" review="$2"
+  local tmp="$STATE.tmp.$$"
+  node -e '
+    const fs = require("fs");
+    const source = process.argv[1];
+    const target = process.argv[2];
+    let state = { schemaVersion: 1, currentPhase: "init", lastCompleted: "", history: [] };
+    try { state = JSON.parse(fs.readFileSync(source, "utf8")); } catch {}
+    state.activeFeature = process.argv[3] || null;
+    state.reviewArtifact = process.argv[4] || null;
+    fs.writeFileSync(target, JSON.stringify(state, null, 2) + "\n");
+  ' "$STATE" "$tmp" "$active" "$review"
+  mv "$tmp" "$STATE"
+}
+
+active_feature_from_list() {
+  node -e '
+    const fs = require("fs");
+    const doc = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const active = doc.features.filter((feature) => feature.status === "in_progress");
+    if (active.length === 1) console.log(active[0].id);
+  ' "$HERE/feature_list.json"
+}
+
+feature_status() {
+  local feature_id="$1"
+  node -e '
+    const fs = require("fs");
+    const doc = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const feature = doc.features.find((candidate) => candidate.id === process.argv[2]);
+    if (feature) console.log(feature.status);
+  ' "$HERE/feature_list.json" "$feature_id"
+}
+
+mark_feature_in_progress() {
+  local feature_id="$1"
+  local ts tmp
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  tmp="$HERE/feature_list.json.tmp.$$"
+  node -e '
+    const fs = require("fs");
+    const source = process.argv[1];
+    const target = process.argv[2];
+    const featureId = process.argv[3];
+    const ts = process.argv[4];
+    const doc = JSON.parse(fs.readFileSync(source, "utf8"));
+    const feature = doc.features.find((candidate) => candidate.id === featureId);
+    if (!feature) throw new Error(`feature not found: ${featureId}`);
+    feature.status = "in_progress";
+    feature.blocker = null;
+    feature.updated_at = ts;
+    doc.updated_at = ts;
+    fs.writeFileSync(target, JSON.stringify(doc, null, 2) + "\n");
+  ' "$HERE/feature_list.json" "$tmp" "$feature_id" "$ts"
+  mv "$tmp" "$HERE/feature_list.json"
+}
+
+# ----------------------------------------------------------------------------
+# BLOCKER helper: emit the agent-friendly what/why/fix triple. Adopted from
+# walkinglabs Lectures 09 / 10 ("design good red-pen markups for agents").
+# ----------------------------------------------------------------------------
+emit_blocker() {
+  local what="$1" why="$2" fix="$3"
+  echo "BLOCKER: $what" >&2
+  [ -n "$why" ] && echo "  WHY: $why" >&2
+  [ -n "$fix" ] && echo "  FIX: $fix" >&2
+}
+
+# ----------------------------------------------------------------------------
+# Gate-liveness receipts. Rationale: production boundary-gate post-mortem
+# (F7) — a gate that "exists" but never runs (or gets deleted) is worse than a
+# violation, because it manufactures false assurance. Every gate we execute
+# leaves a receipt so CI can prove the gate actually ran on this ref.
+# ----------------------------------------------------------------------------
+write_receipt() {
+  local phase="$1" gate="$2" exit_code="$3"
+  local dir="$HERE/receipts"
+  mkdir -p "$dir"
+  local ts sha
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  sha="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+  node -e '
+    const fs = require("fs");
+    const path = process.argv[1];
+    fs.writeFileSync(path, JSON.stringify({
+      schemaVersion: 1,
+      gate: process.argv[2],
+      phase: process.argv[3],
+      exitCode: parseInt(process.argv[4], 10),
+      ts: process.argv[5],
+      sha: process.argv[6],
+    }, null, 2) + "\n");
+  ' "$dir/$phase.json" "$gate" "$phase" "$exit_code" "$ts" "$sha" 2>/dev/null || true
+}
+
+# Telemetry is a byproduct of the loop, never a tool a human must remember to
+# run (F2/F7). Fail-open: emission never aborts a phase.
+emit_metrics() {
+  local phase="$1"
+  if [ -f "$HERE/lib/emit-metrics.mjs" ] && command -v node >/dev/null 2>&1; then
+    node "$HERE/lib/emit-metrics.mjs" --phase "$phase" >/dev/null 2>&1 || true
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# Subcommand: init
+# ----------------------------------------------------------------------------
+cmd_init() {
+  echo "harness: init — health-checking the environment"
+
+  if [ ! -f "$HERE/feature_list.json" ]; then
+    emit_blocker \
+      "missing $HERE/feature_list.json" \
+      "the harness layer requires a scope file; without it, the agent has no machine-readable contract for what 'done' means" \
+      "create it: cp templates/harness/feature_list.json.tpl $HERE/feature_list.json (or re-add the harness layer)"
+    return 1
+  fi
+  if ! node "$HERE/lib/check-feature-list.mjs"; then
+    emit_blocker \
+      "feature_list.json failed schema validation" \
+      "specific reasons printed above by the validator (each with its own WHY: + FIX:)" \
+      "fix the issues the validator reported, then re-run \`bash init.sh\`"
+    return 1
+  fi
+
+  if [ -f "$ROOT/scripts/smoke.sh" ]; then
+    echo "harness: smoke harness present at scripts/smoke.sh"
+  else
+    emit_blocker \
+      "missing scripts/smoke.sh" \
+      "every project needs a falsifiable verification command; no server is not an exemption" \
+      "restore scripts/smoke.sh from the scaffold, then replace its red stub with a project-owned smoke"
+    return 1
+  fi
+
+  if [ -d "$ROOT/.git" ]; then
+    if ! git -C "$ROOT" status --short | head -5; then :; fi
+  fi
+
+  if [ -f "$ROOT/docs/plans" ]; then :; fi
+  if compgen -G "$ROOT/docs/plans/*.md" > /dev/null; then
+    local latest_plan
+    latest_plan="$(ls -t "$ROOT"/docs/plans/*.md 2>/dev/null | head -1)"
+    echo "harness: latest plan -> ${latest_plan#"$ROOT"/}"
+  fi
+
+  if [ -f "$PROGRESS" ]; then
+    local last_entry
+    last_entry="$(grep -E '^## ' "$PROGRESS" | tail -1 || true)"
+    if [ -n "$last_entry" ]; then
+      echo "harness: last progress entry -> $last_entry"
+    fi
+  fi
+
+  # Optional deeper bootstrap check: when INIT_VERIFY=1, also run the smoke
+  # harness as part of init. This catches "the project doesn't even build"
+  # before the agent writes any code (walkinglabs Lecture 06 deeper variant).
+  # Default off because smoke.sh costs ~60s; opt-in for first-session-of-sprint use.
+  if [ "${INIT_VERIFY:-0}" = "1" ] && [ -f "$ROOT/scripts/smoke.sh" ]; then
+    echo "harness: running scripts/smoke.sh as part of init (INIT_VERIFY=1)"
+    if ! ( cd "$ROOT" && bash scripts/smoke.sh ); then
+      emit_blocker \
+        "scripts/smoke.sh failed during INIT_VERIFY=1 init" \
+        "the project's end-to-end smoke does not pass on a clean start; the agent should not begin new work on a red baseline (Lecture 06)" \
+        "investigate and fix the smoke failure first; then re-run \`INIT_VERIFY=1 bash init.sh\`"
+      return 1
+    fi
+  fi
+
+  # Session initialization is a health check, not a lifecycle reset. Preserve
+  # any active phase/bindings so a new editor session resumes the same feature.
+  local current last
+  current="$(read_current_phase)"
+  last="$(read_last_completed)"
+  write_state "$current" "$last" "init" 0
+  if [ "${INIT_VERIFY:-0}" = "1" ]; then
+    echo "harness: init OK (with smoke)"
+  else
+    echo "harness: init OK"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# Subcommand: status
+# ----------------------------------------------------------------------------
+cmd_status() {
+  local quiet=0
+  if [ "${1-}" = "--quiet" ]; then quiet=1; fi
+
+  local current last active review
+  current="$(read_current_phase)"
+  last="$(read_last_completed)"
+  active="$(read_state_field activeFeature)"
+  review="$(read_state_field reviewArtifact)"
+
+  if [ "$quiet" -eq 1 ]; then
+    echo "current=$current"
+    echo "lastCompleted=$last"
+    echo "activeFeature=$active"
+    echo "reviewArtifact=$review"
+    return
+  fi
+
+  echo "harness status:"
+  echo "  current phase: $current"
+  echo "  last completed: ${last:-<none>}"
+  echo "  active feature: ${active:-<none>}"
+  echo "  review artifact: ${review:-<none>}"
+  if [ -f "$STATE" ]; then
+    echo "  history (most recent 5):"
+    node -e '
+      const fs = require("fs");
+      const s = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+      const h = (s.history || []).slice(-5);
+      for (const e of h) console.log("    " + e.ts + "  " + e.phase + "  exit=" + e.exit);
+    ' "$STATE"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# Subcommands: start / review + gate assertions
+# ----------------------------------------------------------------------------
+cmd_assert_phase() {
+  local current allowed
+  current="$(read_current_phase)"
+  for allowed in "$@"; do
+    if [ "$current" = "$allowed" ]; then return 0; fi
+  done
+  emit_blocker \
+    "lifecycle is at '$current', expected one of: $*" \
+    "the workflow refuses to skip or reorder phases" \
+    "complete the current phase, or reset only after closeout"
+  return 1
+}
+
+cmd_assert_active() {
+  local expected="${1-}"
+  local active status
+  if [ -z "$expected" ]; then
+    echo "Usage: harness/run assert-active <status>" >&2
+    return 2
+  fi
+  active="$(read_state_field activeFeature)"
+  if [ -z "$active" ]; then
+    emit_blocker \
+      "no active feature is bound to harness/state.json" \
+      "phase gates must verify one exact work item, not whichever backlog row is newest" \
+      "run \`harness/run start F-NN\` before entering build"
+    return 1
+  fi
+  status="$(feature_status "$active")"
+  if [ "$status" != "$expected" ]; then
+    emit_blocker \
+      "active feature $active has status '${status:-missing}', expected '$expected'" \
+      "the lifecycle state and feature board disagree" \
+      "update $active through the documented feature protocol, then retry the phase"
+    return 1
+  fi
+}
+
+cmd_start() {
+  local feature_id="${1-}"
+  local current bound board_active status
+  if [ -z "$feature_id" ]; then
+    echo "Usage: harness/run start <feature-id>" >&2
+    return 2
+  fi
+  if [[ ! "$feature_id" =~ ^F-[0-9]{2,4}$ ]]; then
+    emit_blocker \
+      "invalid feature id '$feature_id'" \
+      "feature ids are stable joins and must match F-NN" \
+      "choose an existing id from harness/feature_list.json"
+    return 1
+  fi
+  if ! node "$HERE/lib/check-feature-list.mjs"; then
+    return 1
+  fi
+
+  current="$(read_current_phase)"
+  if [ "$current" != "init" ] && [ "$current" != "select" ]; then
+    emit_blocker \
+      "cannot start $feature_id while lifecycle is at '$current'" \
+      "starting another feature would abandon the active lifecycle" \
+      "finish closeout and reset, or resume the currently bound feature"
+    return 1
+  fi
+
+  bound="$(read_state_field activeFeature)"
+  board_active="$(active_feature_from_list)"
+  status="$(feature_status "$feature_id")"
+  if [ -z "$status" ]; then
+    emit_blocker \
+      "feature '$feature_id' is not registered" \
+      "the harness cannot bind lifecycle evidence to a missing work item" \
+      "add a real not_started feature with falsifiable verification_commands, validate it, then retry"
+    return 1
+  fi
+  if [ -n "$bound" ] && [ "$bound" != "$feature_id" ]; then
+    emit_blocker \
+      "state is already bound to $bound" \
+      "WIP=1 forbids replacing the active feature implicitly" \
+      "resume $bound, or finish/reset its lifecycle before starting $feature_id"
+    return 1
+  fi
+  if [ -n "$board_active" ] && [ "$board_active" != "$feature_id" ]; then
+    emit_blocker \
+      "feature board already has $board_active in_progress" \
+      "WIP=1 allows exactly one active feature" \
+      "finish, block, or return $board_active to not_started before starting $feature_id"
+    return 1
+  fi
+
+  case "$status" in
+    not_started)
+      mark_feature_in_progress "$feature_id"
+      ;;
+    in_progress)
+      ;;
+    *)
+      emit_blocker \
+        "feature $feature_id has status '$status' and cannot be started" \
+        "start accepts only not_started work or resumes the same in_progress feature" \
+        "choose a not_started feature; resolve blocked work explicitly rather than bypassing its state"
+      return 1
+      ;;
+  esac
+
+  set_state_context "$feature_id" ""
+  cmd_phase select
+}
+
+normalise_review_path() {
+  local requested="$1"
+  node -e '
+    const fs = require("fs");
+    const path = require("path");
+    const root = path.resolve(process.argv[1]);
+    const reviewRoot = path.join(root, "docs", "reviews");
+    const candidate = path.resolve(root, process.argv[2]);
+    if (!candidate.startsWith(reviewRoot + path.sep)) process.exit(2);
+    if (path.extname(candidate) !== ".md" || !fs.existsSync(candidate)) process.exit(3);
+    console.log(path.relative(root, candidate));
+  ' "$ROOT" "$requested"
+}
+
+cmd_review_path() {
+  local review
+  review="$(read_state_field reviewArtifact)"
+  if [ -z "$review" ]; then return 1; fi
+  printf '%s\n' "$review"
+}
+
+cmd_assert_review() {
+  local active review
+  active="$(read_state_field activeFeature)"
+  review="$(read_state_field reviewArtifact)"
+  if [ -z "$active" ] || [ -z "$review" ]; then
+    emit_blocker \
+      "no explicit review artifact is registered for the active feature" \
+      "the newest markdown file may be an unrelated architecture note" \
+      "write the sprint review, then run \`harness/run review docs/reviews/<feature-review>.md\`"
+    return 1
+  fi
+  if [ ! -f "$ROOT/$review" ]; then
+    emit_blocker \
+      "registered review artifact is missing: $review" \
+      "closeout requires the exact durable review that was checked" \
+      "restore the file or register the correct review path"
+    return 1
+  fi
+  if ! grep -Fq "$active" "$ROOT/$review"; then
+    emit_blocker \
+      "review $review does not name active feature $active" \
+      "a review for another sprint cannot satisfy this lifecycle" \
+      "add the active feature id to the correct review, then retry"
+    return 1
+  fi
+}
+
+# Cite check uses $ROOT so the YAML gate needs no nested quotes (the
+# purpose-built parser leaves \" in the command string).
+cmd_assert_review_cites() {
+  local needle="${1-boundaries.report.json}"
+  local review
+  review="$(read_state_field reviewArtifact)"
+  if [ -z "$review" ] || [ ! -f "$ROOT/$review" ]; then
+    return 1
+  fi
+  grep -Fq "$needle" "$ROOT/$review"
+}
+
+cmd_review() {
+  local requested="${1-}"
+  local current active review
+  if [ -z "$requested" ]; then
+    echo "Usage: harness/run review <docs/reviews/file.md>" >&2
+    return 2
+  fi
+  current="$(read_current_phase)"
+  if [ "$current" != "verify" ] && [ "$current" != "review" ]; then
+    emit_blocker \
+      "cannot register review while lifecycle is at '$current'" \
+      "review follows a passing verify phase" \
+      "finish verification first, then register the review it produced"
+    return 1
+  fi
+  active="$(read_state_field activeFeature)"
+  if [ -z "$active" ]; then
+    emit_blocker \
+      "cannot register a review without an active feature" \
+      "the review must reconcile one bound work item" \
+      "start and verify a feature before review"
+    return 1
+  fi
+  if ! review="$(normalise_review_path "$requested")"; then
+    emit_blocker \
+      "invalid review path '$requested'" \
+      "review artifacts must be existing markdown files under docs/reviews/" \
+      "write the review under docs/reviews/ and pass its repository-relative path"
+    return 1
+  fi
+  set_state_context "$active" "$review"
+  cmd_phase review
+}
+
+# ----------------------------------------------------------------------------
+# Subcommand: phase <name>
+# ----------------------------------------------------------------------------
+cmd_phase() {
+  local target="${1-}"
+  if [ -z "$target" ]; then
+    echo "Usage: harness/run phase <name>" >&2
+    return 2
+  fi
+
+  local found=0 pre="" gate=""
+  while IFS=$'\x1f' read -r name p g; do
+    if [ "$name" = "$target" ]; then
+      found=1; pre="$p"; gate="$g"; break
+    fi
+  done < <(parse_phases)
+
+  if [ "$found" -eq 0 ]; then
+    emit_blocker \
+      "no phase named '$target' in workflow.yaml" \
+      "the runner walks the phases declared in harness/workflow.yaml; '$target' is not one of them" \
+      "valid phases: init, select, build, verify, review, closeout (or whatever your workflow.yaml declares); see \`bash harness/run --help\`"
+    return 1
+  fi
+
+  echo "harness: phase $target"
+  if [ -n "$pre" ] && [ "$pre" != "true" ]; then
+    if ! eval "$pre"; then
+      emit_blocker \
+        "precondition for '$target' failed" \
+        "the workflow refuses to enter a phase whose precondition is not satisfied (walkinglabs Lecture 02: harness governs every transition)" \
+        "the failing command was: $pre — fix the underlying state, then re-run \`bash harness/run phase $target\`"
+      return 1
+    fi
+  fi
+
+  local gate_exit=0
+  if [ -n "$gate" ] && [ "$gate" != "true" ]; then
+    if eval "$gate"; then gate_exit=0; else gate_exit=$?; fi
+  fi
+
+  # Leave a liveness receipt + emit telemetry whether the gate passed or failed.
+  write_receipt "$target" "$gate" "$gate_exit"
+  emit_metrics "$target"
+
+  if [ "$gate_exit" -ne 0 ]; then
+    emit_blocker \
+      "gate for '$target' failed" \
+      "the phase ran, but its evidence-producing gate did not exit 0; the runner refuses to advance until it does (walkinglabs Lectures 09 + 10)" \
+      "the failing command was: $gate — investigate and fix; do NOT weaken the gate to make it pass"
+    write_state "$(read_current_phase)" "$(read_last_completed)" "$target" 1
+    return 1
+  fi
+
+  write_state "$target" "$target" "$target" 0
+  echo "harness: phase $target OK"
+}
+
+# ----------------------------------------------------------------------------
+# Subcommand: advance
+# ----------------------------------------------------------------------------
+cmd_advance() {
+  local current
+  current="$(read_current_phase)"
+
+  local found=0 next=""
+  while IFS=$'\x1f' read -r name _ _; do
+    if [ "$found" -eq 1 ]; then
+      next="$name"; break
+    fi
+    if [ "$name" = "$current" ]; then
+      found=1
+    fi
+  done < <(parse_phases)
+
+  if [ -z "$next" ]; then
+    echo "harness: already at the last phase ($current). Nothing to advance to." >&2
+    return 0
+  fi
+
+  echo "harness: advancing $current -> $next"
+  cmd_phase "$next"
+}
+
+# ----------------------------------------------------------------------------
+# Subcommand: reset --confirm
+# ----------------------------------------------------------------------------
+cmd_reset() {
+  if [ "${1-}" != "--confirm" ]; then
+    echo "Usage: harness/run reset --confirm [--force]" >&2
+    echo "  This wipes local harness/state.json. Requires --confirm." >&2
+    return 2
+  fi
+  local current
+  current="$(read_current_phase)"
+  if [ -f "$STATE" ] && [ "$current" != "closeout" ] && [ "${2-}" != "--force" ]; then
+    emit_blocker \
+      "cannot reset lifecycle state from '$current' before closeout" \
+      "resetting would discard the active feature/review binding and make bypass invisible" \
+      "finish closeout, or use \`reset --confirm --force\` only for an explicitly reviewed recovery"
+    return 1
+  fi
+  rm -f "$STATE"
+  echo "harness: state reset"
+}
+
+# ----------------------------------------------------------------------------
+# Dispatch
+# ----------------------------------------------------------------------------
+sub="${1-}"
+shift || true
+case "$sub" in
+  init)    cmd_init "$@" ;;
+  start)   cmd_start "$@" ;;
+  review)  cmd_review "$@" ;;
+  status)  cmd_status "$@" ;;
+  phase)   cmd_phase "$@" ;;
+  advance) cmd_advance "$@" ;;
+  reset)   cmd_reset "$@" ;;
+  assert-phase)  cmd_assert_phase "$@" ;;
+  assert-active) cmd_assert_active "$@" ;;
+  assert-review) cmd_assert_review "$@" ;;
+  assert-review-cites) cmd_assert_review_cites "$@" ;;
+  review-path)   cmd_review_path "$@" ;;
+  ""|-h|--help|help)
+    cat <<'USAGE'
+harness/run — control plane for the factory loop.
+
+  init                    run the init phase (env + schema)
+  start <feature-id>      mark/bind one feature as in_progress, then enter select
+  review <path>           register this feature's review and enter review
+  status [--quiet]        show current phase, last completed, history
+  phase <name>            run a specific phase (precondition + gate)
+  advance                 walk to the next phase if its gate is green
+  reset --confirm         clear local lifecycle state after closeout
+
+See harness/workflow.yaml for phase definitions and SMOKE.md for the
+smoke contract.
+USAGE
+    ;;
+  *)
+    echo "BLOCKER: unknown subcommand '$sub'" >&2
+    echo "Run: harness/run --help" >&2
+    exit 2
+    ;;
+esac

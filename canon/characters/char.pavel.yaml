@@ -1,0 +1,9 @@
+id: char.pavel
+display_name: "Pavel Novák"
+age: 38
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.pavel

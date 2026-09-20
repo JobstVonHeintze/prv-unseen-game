@@ -1,0 +1,18 @@
+id: scene.archive-sort
+part: 1
+slot: evening
+location: loc.ascend.l1
+node: node.ascend.archive
+cast: [char.elena]
+tags: [romance]
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Sorting. A magazine already half-ordered. Pencil ticks.
+choices:
+  - id: sort
+    label: "Sort until the light changes."
+    effects: []
+hooks_back: [secret.s01]

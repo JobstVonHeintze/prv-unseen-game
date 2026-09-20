@@ -1,0 +1,33 @@
+{
+  "$comment": "Model council config. Non-secret only: put credentials in your shell, provider CLI login, or CI secret store. Disabled by default.",
+  "enabled": false,
+  "mode": "advisory",
+  "trigger": "draft-plan",
+  "requiredReviewers": 2,
+  "timeoutSeconds": 600,
+  "maxCostUsd": null,
+  "reviewers": [],
+  "exampleReviewers": [
+    {
+      "id": "claude-opus",
+      "label": "Claude Opus",
+      "command": ["claude", "-p", "__PROMPT__", "--output-format", "json"],
+      "env": ["ANTHROPIC_API_KEY"],
+      "notes": "Example only. Move into reviewers[] after configuring a non-interactive CLI/API auth path."
+    },
+    {
+      "id": "codex",
+      "label": "Codex",
+      "command": ["codex", "exec", "__PROMPT__"],
+      "env": ["OPENAI_API_KEY"],
+      "notes": "Example only. Ensure the command is headless and writes the review to stdout."
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini",
+      "command": ["gemini", "-p", "__PROMPT__"],
+      "env": ["GOOGLE_API_KEY"],
+      "notes": "Example only. Ensure the command is headless and writes the review to stdout."
+    }
+  ]
+}

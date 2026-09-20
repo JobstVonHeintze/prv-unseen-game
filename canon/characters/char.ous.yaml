@@ -1,0 +1,9 @@
+id: char.ous
+display_name: "Ousmane Diarra"
+age: 19
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.ous

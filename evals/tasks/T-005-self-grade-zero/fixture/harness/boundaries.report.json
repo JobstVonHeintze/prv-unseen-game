@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "checked",
+  "skipped": false,
+  "reason": null,
+  "strict": {
+    "violations_total": 4,
+    "classes": {
+      "policy_gap": 1,
+      "misplaced_contract": 1,
+      "infra_leak": 1,
+      "peer_coupling": 1
+    },
+    "edges": [
+      "extraction→admin",
+      "importer→mapping",
+      "intake→normalization",
+      "mapping→admin"
+    ]
+  },
+  "verbatim": { "violations_total": 4 }
+}

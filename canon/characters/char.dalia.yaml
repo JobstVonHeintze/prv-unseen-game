@@ -1,0 +1,9 @@
+id: char.dalia
+display_name: "Dalia Haddad"
+age: 35
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.dalia

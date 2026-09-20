@@ -1,0 +1,30 @@
+{
+  "_provenance": "boundary post-mortem F3/F4/F6/F14 — see docs/decisions/2026-05-30-boundary-gate-postmortem.md",
+  "_doc": {
+    "purpose": "Authoritative, executable module-boundary rule for contrejour. The constitution prose is descriptive; THIS file + check-boundaries.mjs are normative.",
+    "language": "typescript",
+    "modules": "Pipeline modules under packages/ and apps/. packages/api is the orchestrator and is intentionally not listed, so it may import engine.",
+    "allowedSharedTargets": "canon is the domain layer. engine may import canon types only.",
+    "ratchet": "stdlib is always allowed. Pre-existing debt does not block; only an increase per severity class fails."
+  },
+  "language": "typescript",
+  "srcRoot": ".",
+  "domainModule": "canon",
+  "rule": "inward-only",
+  "modules": {
+    "canon": "packages/canon/src/**",
+    "engine": "packages/engine/src/**",
+    "player": "apps/player/src/**",
+    "authoring": "apps/console/src/**",
+    "renderer": "packages/renderer/src/**",
+    "rehearsal": "packages/rehearsal/src/**"
+  },
+  "allowedSharedTargets": ["canon"],
+  "targetKinds": {
+    "domain": ["canon"],
+    "shared_kernel": [],
+    "infrastructure": ["packages/api"]
+  },
+  "contractSymbolPattern": "validation|payload|schema|contract|model|type|dto",
+  "infraNamePattern": "db|database|repositor|store|client|config|flag|billing|storage|cache|queue|http|sdk"
+}

@@ -1,0 +1,17 @@
+id: scene.mother-call
+part: 1
+slot: evening
+location: loc.passage-des-meuniers.l3
+node: node.passage.roof
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Sunday. The phone rings out. Carmen does not pick up.
+choices:
+  - id: wait
+    label: "Let it ring."
+    effects: [{set: flag.mother-no-answer}]

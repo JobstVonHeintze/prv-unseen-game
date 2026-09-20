@@ -1,0 +1,9 @@
+id: char.tomasz
+display_name: "Tomasz Wrona"
+age: 47
+tier: core
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.tomasz

@@ -1,0 +1,9 @@
+id: char.mika
+display_name: "Mika van Rijn"
+age: 22
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.mika

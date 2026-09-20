@@ -1,0 +1,29 @@
+{
+  "name": "contrejour",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "dev": "pnpm --filter @contrejour/api dev & pnpm --filter @contrejour/player dev & pnpm --filter @contrejour/console dev",
+    "build": "pnpm -r --if-present build",
+    "test": "vitest run --reporter=dot",
+    "test:watch": "vitest",
+    "smoke": "bash scripts/smoke.sh",
+    "canon:validate": "pnpm exec vitest run packages/canon --reporter=dot",
+    "design:lint": "node scripts/design-lint.mjs"
+  },
+  "dependencies": {
+    "@contrejour/api": "workspace:*",
+    "@contrejour/canon": "workspace:*",
+    "@contrejour/engine": "workspace:*",
+    "@contrejour/rehearsal": "workspace:*",
+    "@contrejour/renderer": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

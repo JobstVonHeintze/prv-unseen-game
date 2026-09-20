@@ -1,0 +1,17 @@
+id: scene.roof-room
+part: 1
+slot: gate-internal
+location: loc.passage-des-meuniers.l3
+node: node.passage.roof
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  A letter for L. Hartmann. A grey cat. Blanche says Livia.
+choices:
+  - id: read
+    label: "Read the letter."
+    effects: []

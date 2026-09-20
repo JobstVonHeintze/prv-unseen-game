@@ -1,0 +1,35 @@
+id: scene.gallery
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l1
+node: node.galerie.floor
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Marga opened it. She saw a soaked girl in a green silk blouse through the
+  glass. Viktor is already looking.
+choices:
+  - id: stay
+    label: "Stay for a moment."
+    effects: []
+  - id: walk-home
+    label: "Thank them and walk home."
+    effects: []
+    requires:
+      conditions:
+        wetness:
+          max: wet
+  - id: ask-viktor
+    label: "Ask the painter if she can dry off."
+    effects:
+      - set: flag.gallery-upstairs
+      - enter: scene.gallery-change
+  - id: ask-paloma
+    label: "Ask the woman who owns the room."
+    effects:
+      - set: flag.gallery-upstairs
+      - enter: scene.gallery-change

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "project": "contrejour",
+  "updated_at": "2026-09-20T20:43:41Z",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true,
+    "verification_command_format": "shell-command (must be an exact, runnable line); not a natural-language step"
+  },
+  "status_legend": {
+    "not_started": "Work has not begun.",
+    "in_progress": "The feature is the current active task (WIP=1: only one at a time).",
+    "blocked": "Cannot continue until a documented blocker is resolved.",
+    "done": "Required verification has passed and matching evidence is recorded.",
+    "abandoned": "Decided not to ship; left for record-keeping."
+  },
+  "features": [
+    {
+      "id": "F-01",
+      "title": "Part I walking skeleton and tester desk",
+      "priority": "P0",
+      "area": "engine",
+      "user_behavior": "A human plays Part I gates 1–7 in the Player against real canon; a tester flags a scene; an author inspects the run and attaches a storyboard prompt in the Console; the drifter bot reaches every Part I gate by date.",
+      "verification_commands": [
+        "pnpm test",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm test",
+          "ts": "2026-09-20T08:19:15Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-20T08:16:16Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "agent",
+      "created_at": "2026-09-20T08:00:00Z",
+      "updated_at": "2026-09-20T08:29:40Z"
+    },
+    {
+      "id": "F-02",
+      "title": "Canon proposals with diff and approval",
+      "priority": "P0",
+      "area": "authoring",
+      "user_behavior": "An author submits a canon proposal with a diff and validation report; approve writes through YAML; reject stores the reason; Player never sees proposals.",
+      "verification_commands": [
+        "pnpm exec vitest run tests/contract/proposals.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run tests/contract/proposals.test.ts --reporter=dot",
+          "ts": "2026-09-20T20:43:36Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-20T20:43:41Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "agent",
+      "created_at": "2026-09-20T08:35:00Z",
+      "updated_at": "2026-09-20T20:43:41Z"
+    },
+    {
+      "id": "F-03",
+      "title": "Incidents and felt conditions (first-night rain)",
+      "priority": "P0",
+      "area": "engine",
+      "user_behavior": "After Jonas flirts through her, Elena leaves embarrassed and only then the rain starts; failed cover soaks her; soaked blocks walking home and unlocks gallery upstairs; changing can be recorded; spice level changes how a follow-up is shown, not which flags or leverage fire.",
+      "verification_commands": [
+        "pnpm exec vitest run tests/contract/incident-condition.test.ts --reporter=dot",
+        "pnpm exec vitest run tests/contract/spice-follow-up.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run tests/contract/incident-condition.test.ts --reporter=dot",
+          "ts": "2026-09-20T18:17:42Z"
+        },
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run tests/contract/spice-follow-up.test.ts --reporter=dot",
+          "ts": "2026-09-20T18:17:43Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-20T18:16:08Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "agent",
+      "created_at": "2026-09-20T17:20:00Z",
+      "updated_at": "2026-09-20T18:17:43Z"
+    },
+    {
+      "id": "F-04",
+      "title": "Taken-conduct follow-up: Tilde VIP demand",
+      "priority": "P1",
+      "area": "engine",
+      "user_behavior": "On a dark route Elena can film Tilde with two guests; after sending the recording to Tilde a follow-up offers reveal-to-the-other versus film-someone-else; spice changes only the depicted proof.",
+      "verification_commands": [
+        "pnpm exec vitest run tests/contract/spice-follow-up.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [],
+      "status": "not_started",
+      "blocker": null,
+      "owner": "agent",
+      "created_at": "2026-09-20T17:38:00Z",
+      "updated_at": "2026-09-20T17:38:00Z"
+    }
+  ]
+}

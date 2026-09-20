@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/dark-factory/task-pack.schema.json",
+  "title": "Dark Factory benchmark task pack",
+  "description": "Documentation schema for curated private benchmark packs. v1 does not enforce this schema at runtime.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "source", "tasks"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project", "repo"],
+      "properties": {
+        "project": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "difficultyMix": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "hiddenRatio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "failureModeTags": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "uniqueItems": true
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "tier", "difficulty", "kind"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "tier": { "type": "string", "enum": ["smoke", "full", "hidden"] },
+          "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+          "kind": { "type": "string", "enum": ["outcome", "regression", "chain", "safety"] },
+          "sourceCommit": { "type": "string" },
+          "sourceIncident": { "type": "string" },
+          "expectedFailureModes": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

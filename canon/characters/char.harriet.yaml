@@ -1,0 +1,9 @@
+id: char.harriet
+display_name: "Harriet Cole"
+age: 45
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.harriet

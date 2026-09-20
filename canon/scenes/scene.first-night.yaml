@@ -1,0 +1,22 @@
+id: scene.first-night
+part: 1
+slot: gate-internal
+location: loc.ascend.l1
+node: node.ascend.lobby
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  The lobby. The dead badge. The aubergine car. At the truck Jonas talks
+  straight through her at Freya. Face burning, the street is the only way left.
+choices:
+  - id: leave-street
+    label: "Leave down the street. Face burning."
+    effects:
+      - start_incident: incident.rain-street
+  - id: wait-truck
+    label: "Stay by the truck a moment longer."
+    effects: []

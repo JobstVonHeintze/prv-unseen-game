@@ -1,0 +1,12 @@
+{
+  "violations_total": 0,
+  "classes": {
+    "policy_gap": 0,
+    "misplaced_contract": 0,
+    "infra_leak": 0,
+    "peer_coupling": 0
+  },
+  "edges": [],
+  "established": "2026-09-20",
+  "note": "ratchet: a class may go DOWN, never UP without scrutiny — see F8. infra_leak/peer_coupling target 0. Regenerate with: node harness/lib/check-boundaries.mjs --update-baseline"
+}

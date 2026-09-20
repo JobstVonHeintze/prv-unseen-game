@@ -1,0 +1,11 @@
+id: gate.p1.g7
+name: "The pulse"
+part: 1
+order: 7
+trigger:
+  progress: {all: [flag.found-green-dress, flag.mother-no-answer]}
+  date: {day: 24}
+scene: scene.dalia-pulse
+asks_theory_question: true
+breaks_beliefs: [belief.b1, belief.b2]
+opens_phase: null

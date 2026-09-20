@@ -1,0 +1,9 @@
+id: char.hubert
+display_name: "Hubert Lemoine"
+age: 54
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.hubert

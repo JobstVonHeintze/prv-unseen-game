@@ -1,0 +1,33 @@
+id: loc.ascend
+display_name: Ascend
+levels:
+  l1: {name: Lobby and archive, phase: 0, work_phase: 0}
+  l2: {name: Media floors, phase: 3}
+  l3: {name: The Farm, phase: 3, work_phase: 2}
+  l4: {name: Floor 7M, phase: 4, work_phase: 3}
+nodes:
+  - id: node.ascend.lobby
+    level: l1
+    cameras: [witness.noor]
+    facts: ["glass doors, terrazzo, escalators up, stairs down"]
+    noise: 0.25
+  - id: node.ascend.desk
+    level: l1
+    facts: ["Noor's desk, a monitor Elena is not supposed to see"]
+  - id: node.ascend.cellar-stairs
+    level: l1
+    facts: ["one handrail", "light fades halfway", "one replaced step"]
+  - id: node.ascend.archive
+    level: l1
+    hiding: [{spot: rolling-shelves, cover: high, checked_by: []}]
+    facts: ["the archive lies under the lobby"]
+  - id: node.ascend.floor-7m
+    level: l4
+    phone_drawer: true
+edges:
+  - {from: node.ascend.lobby, to: node.ascend.cellar-stairs, kind: door, lockable_from: node.ascend.lobby}
+  - {from: node.ascend.cellar-stairs, to: node.ascend.archive, kind: walk}
+  - {from: node.ascend.lobby, to: node.ascend.desk, kind: walk}
+earshot:
+  - {from: node.ascend.lobby, to: node.ascend.desk, quality: good}
+  - {from: node.ascend.archive, to: node.ascend.cellar-stairs, quality: good}

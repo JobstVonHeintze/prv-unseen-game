@@ -1,0 +1,10 @@
+id: witness.blanche
+character: char.blanche
+observes:
+  nodes: [node.passage.stairwell, node.passage.front-door]
+  kinds: [arrival, departure, visitor]
+tells:
+  - to: witness.cedric
+    delay_evenings: 0
+    probability: 1.0
+consequence_flag: flag.blanche-told-cedric

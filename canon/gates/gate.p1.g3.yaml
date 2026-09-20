@@ -1,0 +1,11 @@
+id: gate.p1.g3
+name: "The roof room"
+part: 1
+order: 3
+trigger:
+  progress: {all: []}
+  date: {day: 4}
+scene: scene.roof-room
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: 1

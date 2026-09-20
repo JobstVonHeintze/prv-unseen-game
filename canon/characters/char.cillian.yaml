@@ -1,0 +1,9 @@
+id: char.cillian
+display_name: "Cillian Byrne"
+age: 25
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.cillian

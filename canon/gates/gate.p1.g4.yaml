@@ -1,0 +1,11 @@
+id: gate.p1.g4
+name: "The first sitting"
+part: 1
+order: 4
+trigger:
+  progress: {all: []}
+  date: {day: 7}
+scene: scene.first-sitting
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: null

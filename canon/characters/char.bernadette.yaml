@@ -1,0 +1,9 @@
+id: char.bernadette
+display_name: "Bernadette Koffi"
+age: 49
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.bernadette

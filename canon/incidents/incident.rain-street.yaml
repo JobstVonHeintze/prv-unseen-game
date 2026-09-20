@@ -1,0 +1,16 @@
+id: incident.rain-street
+name: The rain
+after_choice:
+  scene: scene.first-night
+  choices: [leave-street]
+scene: scene.rain-cover
+lock: [advance_evening, free_roam]
+pressure:
+  condition: condition.wetness
+  thresholds:
+    - { at: 1, level: damp }
+    - { at: 2, level: wet }
+    - { at: 3, level: soaked }
+valid: [gallery-door]
+fires_gate: gate.p1.g2
+flag: flag.reached-gallery

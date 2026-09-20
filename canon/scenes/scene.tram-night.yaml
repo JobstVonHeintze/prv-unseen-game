@@ -1,0 +1,17 @@
+id: scene.tram-night
+part: 1
+slot: evening
+location: loc.tram-9.l1
+node: node.tram.car
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Octave says bonsoir. The one greeting that fits badly with a ghost.
+choices:
+  - id: ride
+    label: "Ride to the last stop."
+    effects: []

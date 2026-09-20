@@ -1,0 +1,162 @@
+# Rationale: production boundary-gate post-mortem (F1/F5/F7) — see
+# docs/decisions/2026-05-30-boundary-gate-postmortem.md
+# The module-boundaries job used to be a no-op `echo` (a green check that
+# proved nothing — exactly how a project shipped asserting "0 violations"
+# while 4 existed). It now runs a deterministic ratchet, uploads the evidence
+# artifact, and a `gate-liveness` meta-job fails loudly if the gate did not run.
+name: Repository Gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+
+  product-smoke:
+    name: Product smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run configured hosted smoke
+        run: |
+          bash scripts/smoke.sh
+
+  design-md-lint:
+    name: DESIGN.md lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Lint DESIGN.md
+        run: npm run design:lint
+
+  module-boundaries:
+    name: Module boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: "Boundary ratchet (deterministic, source: boundary post-mortem F1/F5/F7)"
+        run: node harness/lib/check-boundaries.mjs --check --json harness/boundaries.report.json
+      - name: Upload boundary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boundary-report
+          path: harness/boundaries.report.json
+
+  gate-liveness:
+    name: Gate liveness (F7 — a gate that never runs must fail loud)
+    runs-on: ubuntu-latest
+    needs: [module-boundaries]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download boundary evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: boundary-report
+          path: liveness
+      - name: Assert the boundary gate produced a receipt on this ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Rationale: boundary post-mortem F7 — quality.yml "existed" but ran 0 times,
+          # then was deleted. A missing/removed gate must fail louder than a
+          # violation. If the module-boundaries job is deleted, `needs:` above
+          # makes this workflow invalid (even louder). If it ran but produced
+          # no evidence, fail here.
+          if [ ! -s liveness/boundaries.report.json ]; then
+            echo "BLOCKER: no boundary evidence artifact for this ref"
+            echo "  WHY: the module-boundaries gate did not produce harness/boundaries.report.json"
+            echo "  FIX: do not short-circuit or delete the module-boundaries job; restore it"
+            exit 1
+          fi
+          echo "gate-liveness: boundary receipt present ($(wc -c < liveness/boundaries.report.json) bytes)"
+
+  markdown-health:
+    name: Markdown health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for broken internal links in docs/
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r f; do
+            while IFS= read -r link; do
+              # Only check relative markdown links
+              if [[ "$link" =~ ^[./] ]] && [[ "$link" =~ \.md ]]; then
+                if [ ! -f "$(dirname "$f")/$link" ] && [ ! -f "$link" ]; then
+                  echo "Broken link in $f: $link"
+                  fail=1
+                fi
+              fi
+            done < <(grep -oE '\]\([^)]+\)' "$f" | sed 's/.*(\(.*\)).*/\1/')
+          done < <(find docs/ -name '*.md' 2>/dev/null || true)
+          exit $fail
+
+  claude-agents-sync:
+    name: CLAUDE.md / AGENTS.md sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify both agent-instruction files agree on canonical shared rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f scripts/check-sync.mjs ]; then
+            echo "scripts/check-sync.mjs missing — re-scaffold or restore from templates"
+            exit 1
+          fi
+          node scripts/check-sync.mjs .
+
+  process-metrics:
+    name: Process-health metrics (telemetry byproduct — F2/F7)
+    runs-on: ubuntu-latest
+    if: always()
+
+    # Reuse the evidence the module-boundaries gate already produced rather than
+    # recomputing the boundary check a second time. product-smoke, when present,
+    # feeds SMOKE_PASS so the observatory is not stuck at null.
+    needs: [module-boundaries, product-smoke]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Reuse boundary evidence from the gate job (no recompute)
+        uses: actions/download-artifact@v4
+        continue-on-error: true # telemetry is fail-open; missing evidence -> status=missing, counts=N/A
+        with:
+          name: boundary-report
+          path: harness
+
+      - name: Emit verify-phase metrics
+        # Telemetry must be a byproduct of the loop, never a tool a human must
+        # remember to run (F7). emit-metrics fail-opens: it never breaks CI.
+
+        env:
+          SMOKE_PASS: ${{ needs.product-smoke.result == 'success' }}
+
+        run: node harness/lib/emit-metrics.mjs --phase verify || true
+      - name: Upload metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: process-metrics
+          path: harness/metrics/
+          if-no-files-found: warn
+

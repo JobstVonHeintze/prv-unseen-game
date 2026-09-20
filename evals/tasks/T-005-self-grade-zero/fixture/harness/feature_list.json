@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "project": "eval-fixture",
+  "updated_at": "2026-05-30T00:00:00Z",
+  "features": [
+    {
+      "id": "F-01",
+      "title": "Boundary-gated feature",
+      "priority": "P0",
+      "area": "core",
+      "user_behavior": "The planted report is the evidence; the review must cite it.",
+      "verification_commands": ["bash scripts/smoke.sh"],
+      "evidence": [
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-05-30T00:00:00Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "eval",
+      "created_at": "2026-05-29T00:00:00Z",
+      "updated_at": "2026-05-30T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+id: scene.wardrobe-search
+part: 1
+slot: evening
+location: loc.passage-des-meuniers.l3
+node: node.passage.roof
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  At the back of the wardrobe, green silk in her size.
+choices:
+  - id: touch
+    label: "Touch the dress."
+    effects: [{set: flag.found-green-dress}]

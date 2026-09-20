@@ -1,0 +1,8 @@
+id: loc.rue-valmont
+display_name: "Rue Valmont"
+levels:
+  l1: {name: Street, phase: 0}
+nodes:
+  - id: node.rue.street
+    level: l1
+    facts: ["blue hour", "wet cobblestones", "shop windows"]

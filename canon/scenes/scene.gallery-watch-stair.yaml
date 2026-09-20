@@ -1,0 +1,29 @@
+id: scene.gallery-watch-stair
+part: 1
+slot: gate-internal
+location: loc.galerie-restrepo.l2
+node: node.galerie.changing
+cast: [char.elena, char.viktor]
+tags: []
+requires:
+  phase_min: 0
+  all: [flag.watch.realized]
+  none: []
+beat: >
+  A step on the stair. She knows that walk.
+spice:
+  l1: >
+    She keeps the spare shirt to her chest. The step stops. She does not
+    look at the gap.
+  l2: >
+    She lets the wet silk hang a moment longer than she needs. She knows
+    he is on the stair. She does not close the door.
+  l3: >
+    [LEVEL 3 PLACEHOLDER: hand-written] Brief: she knows Viktor is watching
+    from the stair and she lets him see her change, explicit, still her
+    choice. Fade afterwards. No coercion tag.
+choices:
+  - id: continue
+    label: "Breathe. Finish dressing."
+    effects: []
+hooks_back: [secret.s-changing]

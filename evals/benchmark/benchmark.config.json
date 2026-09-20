@@ -1,0 +1,13 @@
+{
+  "$comment": "Private benchmark config. Disabled by default so generated projects do not run agent evals until you explicitly opt in.",
+  "enabled": false,
+  "mode": "background",
+  "schedule": "weekly",
+  "tier": "smoke",
+  "samples": 5,
+  "maxCostUsd": null,
+  "taskPacks": [
+    "evals/tasks"
+  ],
+  "publishToObservatory": false
+}

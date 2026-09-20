@@ -1,0 +1,17 @@
+id: scene.first-sitting
+part: 1
+slot: gate-internal
+location: loc.viktor-factory.l1
+node: node.factory.hall
+cast: [char.elena]
+tags: []
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  He draws for hours. A woman in grey brings coffee.
+choices:
+  - id: sit
+    label: "Sit still."
+    effects: []

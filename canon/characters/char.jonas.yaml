@@ -1,0 +1,9 @@
+id: char.jonas
+display_name: "Jonas Hartmann"
+age: 27
+tier: core
+liminal: false
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.jonas

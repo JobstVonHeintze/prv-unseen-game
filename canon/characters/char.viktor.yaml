@@ -1,0 +1,9 @@
+id: char.viktor
+display_name: "Viktor Rehberg"
+age: 56
+tier: core
+liminal: true
+romance:
+  available: true
+  flirt_from: 0
+seen_flag: flag.seen.viktor

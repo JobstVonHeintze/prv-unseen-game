@@ -1,0 +1,6 @@
+id: witness.dragan
+character: char.dragan
+observes:
+  nodes: [node.ascend.lobby]
+  kinds: [arrival]
+tells: []

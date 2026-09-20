@@ -1,0 +1,11 @@
+id: gate.p1.g1
+name: "The first night"
+part: 1
+order: 1
+trigger:
+  progress: {all: []}
+  date: {day: 1}
+scene: scene.first-night
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: null

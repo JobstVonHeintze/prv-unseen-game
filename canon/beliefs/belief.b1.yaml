@@ -1,0 +1,5 @@
+id: belief.b1
+statement: She is dead and does not know it.
+part: 1
+fed_by: [flag.zero-views]
+broken_by: [gate.p1.g7]

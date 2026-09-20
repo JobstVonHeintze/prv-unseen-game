@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://create-spec-kit/harness/feature_list.schema.json",
+  "title": "feature_list.json",
+  "description": "Machine-readable scope contract for a project. Mutated only by sprint-runner; cross-checked by sprint-reviewer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "project", "features"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "project":       { "type": "string", "minLength": 1 },
+    "updated_at":    { "type": "string", "format": "date-time" },
+    "rules":         { "type": "object", "description": "Self-documenting rules block. Cross-feature invariants (unique ids and at most one in_progress row) are enforced by check-feature-list.mjs." },
+    "status_legend": { "type": "object", "description": "Self-documenting status legend; mirrors the enum below for human/agent readers." },
+    "features": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/feature" }
+    }
+  },
+  "$defs": {
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "title", "priority", "area", "user_behavior",
+        "verification_commands", "evidence", "status",
+        "blocker", "owner", "created_at", "updated_at"
+      ],
+      "properties": {
+        "id":            { "type": "string", "pattern": "^F-[0-9]{2,4}$" },
+        "title":         { "type": "string", "minLength": 1 },
+        "priority":      { "enum": ["P0", "P1", "P2"] },
+        "area":          { "type": "string", "minLength": 1 },
+        "user_behavior": { "type": "string", "minLength": 1 },
+        "verification_commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_entry" }
+        },
+        "status": {
+          "enum": ["not_started", "in_progress", "blocked", "done", "abandoned"]
+        },
+        "blocker":    { "type": ["string", "null"] },
+        "owner":      { "type": "string", "minLength": 1 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "blocked" } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": { "blocker": { "type": "string", "minLength": 1 } }
+          },
+          "else": {
+            "properties": {
+              "blocker": {
+                "anyOf": [
+                  { "type": "null" },
+                  { "const": "" }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidence_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref", "ts"],
+      "properties": {
+        "kind": { "enum": ["commit", "test_run", "smoke_run", "screenshot", "log"] },
+        "ref":  { "type": "string", "minLength": 1 },
+        "ts":   { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

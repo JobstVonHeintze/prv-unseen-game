@@ -1,0 +1,11 @@
+id: gate.p1.g5
+name: "The woman in white"
+part: 1
+order: 5
+trigger:
+  progress: {all: []}
+  date: {day: 10}
+scene: scene.woman-in-white
+asks_theory_question: false
+breaks_beliefs: []
+opens_phase: null

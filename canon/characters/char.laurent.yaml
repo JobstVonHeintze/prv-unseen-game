@@ -1,0 +1,9 @@
+id: char.laurent
+display_name: "Laurent Vasseur"
+age: 52
+tier: core
+liminal: false
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.laurent

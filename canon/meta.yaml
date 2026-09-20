@@ -1,0 +1,9 @@
+version: "0.1.0-slice-p1"
+spice_level: 2
+slice:
+  parts: [1]
+  last_gate: gate.p1.g7
+calendar:
+  start_day: 1
+  sunday: 0
+  rent_day: 1

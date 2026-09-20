@@ -1,0 +1,49 @@
+:root {
+  --color-primary: #0e1524;
+  --color-secondary: #9fb0cf;
+  --color-tertiary: #c9a24a;
+  --color-ink: #d7e0f2;
+  --color-muted: #7f90b3;
+  --color-panel: #172033;
+  --color-edge: #3a4a72;
+  --color-street: #1a2440;
+  --font: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --radius-phone: 28px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--color-primary); color: var(--color-ink); font-family: var(--font); }
+body { display: grid; place-items: center; padding: var(--space-md); }
+.phone {
+  width: min(390px, 100%);
+  min-height: 720px;
+  background: var(--color-primary);
+  border: 1px solid var(--color-edge);
+  border-radius: var(--radius-phone);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.meta { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-muted); }
+.runid { font-size: 0.7rem; letter-spacing: 0; text-transform: none; color: var(--color-muted); word-break: break-all; }
+h1, h2 { margin: 0; font-weight: 600; }
+.question { color: var(--color-tertiary); font-size: 0.95rem; }
+.felt { color: var(--color-muted); font-size: 0.85rem; margin: 0; }
+.scene { background: var(--color-panel); border: 1px solid var(--color-edge); border-radius: 8px; padding: var(--space-md); white-space: pre-wrap; }
+button, select, textarea, input {
+  font: inherit;
+  background: var(--color-street);
+  color: var(--color-ink);
+  border: 1px solid var(--color-edge);
+  border-radius: 4px;
+  padding: 12px;
+}
+button.primary { background: var(--color-tertiary); color: var(--color-primary); border-color: var(--color-tertiary); }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-sm); }
+.apps button { font-size: 0.75rem; }
+textarea { width: 100%; min-height: 80px; }
+.flag { border-top: 1px solid var(--color-edge); padding-top: var(--space-md); }

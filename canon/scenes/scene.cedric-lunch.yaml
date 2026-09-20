@@ -1,0 +1,21 @@
+id: scene.cedric-lunch
+part: 1
+slot: evening
+location: loc.passage-des-meuniers.l3
+node: node.passage.front-door
+cast: [char.elena]
+tags: [romance, rent]
+requires:
+  phase_min: 0
+  all: []
+  none: []
+beat: >
+  Blanche has engineered a lunch. Rent is late.
+choices:
+  - id: kind
+    label: "Be kind. Be clear."
+    effects: [{set: flag.seen.cedric}, {add: {meter.visibility: 1}}]
+  - id: believe
+    label: "Let him believe what he wants."
+    effects: [{set: flag.used.cedric}, {add: {meter.celeste: 2}}, {spine: spine.d01=dark}]
+hooks_back: [secret.s01]

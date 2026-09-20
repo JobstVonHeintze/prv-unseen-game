@@ -1,0 +1,20 @@
+id: loc.passage-des-meuniers
+display_name: 14 Passage des Meuniers
+levels:
+  l1: {name: Stairwell and door, phase: 0}
+  l2: {name: Neighbours, phase: 0}
+  l3: {name: Roof room, phase: 0}
+nodes:
+  - id: node.passage.front-door
+    level: l1
+    facts: ["no lift", "six floors"]
+  - id: node.passage.stairwell
+    level: l1
+  - id: node.passage.roof
+    level: l3
+    facts: ["from Elena's skylight the top of the Ascend building is visible"]
+edges:
+  - {from: node.passage.front-door, to: node.passage.stairwell, kind: door}
+  - {from: node.passage.stairwell, to: node.passage.roof, kind: stairs}
+earshot:
+  - {from: node.passage.stairwell, to: node.passage.front-door, quality: good}

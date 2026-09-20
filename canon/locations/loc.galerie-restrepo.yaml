@@ -1,0 +1,15 @@
+id: loc.galerie-restrepo
+display_name: "Galerie Restrepo"
+levels:
+  l1: {name: Floor, phase: 0}
+  l2: {name: Office and changing, phase: 0}
+nodes:
+  - id: node.galerie.floor
+    level: l1
+    facts: []
+  - id: node.galerie.changing
+    level: l2
+    facts: ["rail of spare shirts", "door does not lock"]
+    cameras: []
+edges:
+  - {from: node.galerie.floor, to: node.galerie.changing, kind: stairs, requires: flag.gallery-upstairs}

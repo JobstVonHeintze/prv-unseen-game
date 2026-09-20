@@ -1,0 +1,9 @@
+id: char.blanche
+display_name: "Blanche Oury"
+age: 77
+tier: core
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.blanche

@@ -1,0 +1,17 @@
+{
+  "name": "@contrejour/api",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "start": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@contrejour/canon": "workspace:*",
+    "@contrejour/engine": "workspace:*",
+    "@contrejour/renderer": "workspace:*"
+  }
+}

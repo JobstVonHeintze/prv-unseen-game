@@ -1,0 +1,8 @@
+id: condition.wetness
+levels: [dry, damp, wet, soaked]
+default: dry
+felt:
+  dry: ""
+  damp: "The silk is dark at the shoulders."
+  wet: "Water runs into her shoes."
+  soaked: "The blouse clings. She cannot go home like this."

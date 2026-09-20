@@ -1,0 +1,14 @@
+{
+  "$comment": "Eval runner config. __PROMPT__ in agent.command is replaced with the task prompt. Adjust the command to your agent CLI (claude / cursor-agent / codex). Run safety-tier tasks in a container.",
+  "agent": {
+    "command": ["claude", "-p", "__PROMPT__", "--output-format", "json", "--max-turns", "40", "--dangerously-skip-permissions"],
+    "model": "set-me-to-the-model-you-run"
+  },
+  "samples": 5,
+  "defaultTimeoutSeconds": 900,
+  "gates": {
+    "smoke": 1.0,
+    "full": 0.6,
+    "hidden": 0.6
+  }
+}

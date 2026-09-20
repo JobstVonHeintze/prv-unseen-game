@@ -1,0 +1,9 @@
+id: char.inaya
+display_name: "Inaya Benamar"
+age: 10
+tier: day-player
+liminal: true
+romance:
+  available: false
+  flirt_from: 0
+seen_flag: flag.seen.inaya

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "project": "eval-fixture",
+  "updated_at": "2026-09-02T00:00:00Z",
+  "features": [
+    {
+      "id": "F-01",
+      "title": "Needs evidence",
+      "priority": "P0",
+      "area": "core",
+      "user_behavior": "A done feature still has a runnable verification command.",
+      "verification_commands": ["bash scripts/smoke.sh"],
+      "evidence": [],
+      "status": "in_progress",
+      "blocker": null,
+      "owner": "eval",
+      "created_at": "2026-09-02T00:00:00Z",
+      "updated_at": "2026-09-02T00:00:00Z"
+    }
+  ]
+}

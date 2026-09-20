@@ -1,0 +1,63 @@
+{
+  "stateVersion": 1,
+  "generatorVersion": "0.1.0",
+  "projectName": "contrejour",
+  "description": "Narrative simulator and authoring desk for UNSEEN: a text-only playable, a Console, and rehearsal bots.",
+  "stackHint": "typescript+vite+vitest+pnpm workspaces",
+  "stackId": "typescript",
+  "primaryRuntime": "node",
+  "surfaces": [
+    "apps/player",
+    "apps/console",
+    "packages/api"
+  ],
+  "smokeCommand": "bash scripts/smoke.sh",
+  "ciSmokeCommand": "bash scripts/smoke.sh",
+  "testCommand": "pnpm exec vitest run --reporter=dot",
+  "implementerLanguages": [
+    "ts"
+  ],
+  "layers": {
+    "specKit": true,
+    "constitution": true,
+    "sprint": true,
+    "contractTests": true,
+    "ui": true,
+    "manual": true,
+    "audits": true,
+    "sonar": false,
+    "github": true,
+    "hooks": true,
+    "harness": true,
+    "compound": true,
+    "evals": true,
+    "council": true,
+    "cursorSkills": true
+  },
+  "modules": [
+    "canon",
+    "engine",
+    "player",
+    "authoring",
+    "renderer",
+    "rehearsal"
+  ],
+  "design": {
+    "name": "Provisional nocturnal",
+    "primary": "#0e1524",
+    "secondary": "#9fb0cf",
+    "tertiary": "#c9a24a",
+    "neutral": "#f1f4fa",
+    "headingFont": "IBM Plex Sans",
+    "bodyFont": "IBM Plex Sans"
+  },
+  "github": {
+    "owner": "JobstVonHeintze",
+    "repo": "prv-unseen-game"
+  },
+  "defaultBranch": "main",
+  "commitPolicy": "ask",
+  "generateBootstrap": false,
+  "createdAt": "2026-09-20T08:01:39.035Z",
+  "updatedAt": "2026-09-20T08:01:39.035Z"
+}
