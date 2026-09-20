@@ -59,7 +59,7 @@
 ## 2026-09-20T20:44:00Z — agent — F-02 closed; owner asked commit+push
 
 - **done:** F-02 proposals: diff + validation on POST, write on approve, reason on reject, Player allowlist unchanged. 19 files / 34 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-20-F-02.md`. Plan `docs/plans/2026-09-20-canon-proposals.md` Status: done. Learning: `docs/learnings/2026-09-20-proposals-copy-canon-in-tests.md`.
-- **red:** none. Owner asked commit and push this session.
+- **red:** none. First commit `c372002` pushed to `origin/main`.
 - **next:** after push, fresh session may start F-04 or the entity editor. Do not start them in this closeout.
 
 
