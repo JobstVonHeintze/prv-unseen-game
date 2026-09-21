@@ -24,3 +24,13 @@ pre { white-space: pre-wrap; font-size: 0.8rem; }
 .schematic, #e-yaml, #e-yaml + pre, .card pre { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--color-secondary); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 .row button { width: auto; }
+.form label {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.form select { width: auto; flex: 1; }
+.form .row input { flex: 2; }

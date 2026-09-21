@@ -5,3 +5,4 @@ export * from "./validate.js";
 export * from "./spice.js";
 export * from "./proposal.js";
 export * from "./entities.js";
+export * from "./scene-form.js";

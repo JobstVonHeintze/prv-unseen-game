@@ -2,12 +2,29 @@
 
 Narrative simulator and authoring desk for UNSEEN: a text-only playable, a Console, and rehearsal bots.
 
+**Authors and testers:** start with
+[`docs/manuals/end-user-manual.md`](docs/manuals/end-user-manual.md).
+
 Scaffolded with [`create-spec-kit`](https://github.com/JobstVonHeintze/speckit-darkfactory-setup).
 The scaffold follows the Anthropic Masterclass at Google Cloud Convention 2026
 guidance: keep the harness light enough for agent freedom, verify outcomes at
 the edges, and use evals to measure harness changes.
 
-## Quick start
+## Run the desk
+
+```bash
+pnpm install
+pnpm dev
+```
+
+- Player: `http://127.0.0.1:5173/`
+- Console: `http://127.0.0.1:5174/`
+- API: `http://127.0.0.1:8787/v1/`
+
+How to play, inspect, rehearse, and propose:
+[`docs/manuals/end-user-manual.md`](docs/manuals/end-user-manual.md).
+
+## Quick start (agents)
 
 ```bash
 # Open the project in your AI editor (Cursor / Claude Code / Codex).
@@ -16,10 +33,11 @@ the edges, and use evals to measure harness changes.
 
 Read these files in order:
 
-1. **`MANUAL.md`** — full user manual. Start here for concepts.
-2. `CLAUDE.md` — the living contract for agents.
-3. `specs/constitution.md` — project principles and module boundaries.
-4. `DESIGN.md` — visual identity tokens and rationale.
+1. **`docs/manuals/end-user-manual.md`** — how a human uses Player and Console.
+2. **`MANUAL.md`** — scaffold and agent catalogue.
+3. `CLAUDE.md` — the living contract for agents.
+4. `specs/constitution.md` — project principles and module boundaries.
+5. `DESIGN.md` — visual identity tokens and rationale.
 
 You skipped the starter `BOOTSTRAP.md`. The scaffold is ready to use as-is;
 run the bootstrap skill later if you want AI-assisted product calibration.

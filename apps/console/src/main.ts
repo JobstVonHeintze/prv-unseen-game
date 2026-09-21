@@ -14,6 +14,12 @@ type Proposal = {
 };
 type EntityRef = { id: string; type: string; path: string; label: string };
 type Issue = { severity: string; code: string; message: string };
+type SceneForm = {
+  id: string;
+  beat: string;
+  tags: string[];
+  choices: Array<{ id: string; label: string; effects: Array<{ kind: string; value: string }> }>;
+};
 type Rehearsal = {
   id: string;
   missed_gate_scenes: Array<{ gateId: string; sceneId: string }>;
@@ -37,6 +43,7 @@ let editorQuery = "";
 let editorId = "";
 let editorPath = "";
 let editorYaml = "";
+let editorForm: SceneForm | null = null;
 let editorDiff = "";
 let editorIssues: Issue[] = [];
 let lastRehearsal: Rehearsal | null = null;
@@ -57,6 +64,32 @@ async function refresh(): Promise<void> {
   proposals = await api("/v1/console/proposals");
   entities = await api("/v1/console/canon/search");
   render();
+}
+
+function esc(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
+}
+
+function readFormFromDom(): SceneForm | null {
+  if (!editorForm) return null;
+  const beat = (document.querySelector("#f-beat") as HTMLTextAreaElement | null)?.value ?? editorForm.beat;
+  const tags = ((document.querySelector("#f-tags") as HTMLInputElement | null)?.value ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const choices = [...document.querySelectorAll("[data-choice]")].map((row) => {
+    const i = (row as HTMLElement).dataset.choice ?? "0";
+    const effects = [...row.querySelectorAll("[data-effect]")].map((ef) => ({
+      kind: ((ef as HTMLElement).querySelector("[data-ekind]") as HTMLSelectElement | null)?.value || "bank",
+      value: ((ef as HTMLElement).querySelector("[data-evalue]") as HTMLInputElement | null)?.value || "",
+    }));
+    return {
+      id: ((document.querySelector(`#f-cid-${i}`) as HTMLInputElement | null)?.value ?? "").trim(),
+      label: ((document.querySelector(`#f-clabel-${i}`) as HTMLInputElement | null)?.value ?? "").trim(),
+      effects,
+    };
+  });
+  return { id: editorForm.id, beat, tags, choices };
 }
 
 function schematic(): string {
@@ -100,7 +133,39 @@ function render(): void {
           .map((e) => `<button data-entity="${e.id}">${e.id}</button>`)
           .join("")}</div>
         <p>${editorPath || "Open an entity."}</p>
-        <textarea id="e-yaml" rows="14" placeholder="YAML">${editorYaml.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</textarea>
+        ${
+          editorForm
+            ? `<div class="form">
+          <label for="f-beat">Beat</label>
+          <textarea id="f-beat" rows="5">${esc(editorForm.beat)}</textarea>
+          <label for="f-tags">Tags</label>
+          <input id="f-tags" value="${esc(editorForm.tags.join(", "))}" />
+          ${editorForm.choices
+            .map(
+              (c, i) => `<div class="card" data-choice="${i}">
+            <input id="f-cid-${i}" value="${esc(c.id)}" placeholder="choice id" />
+            <input id="f-clabel-${i}" value="${esc(c.label)}" placeholder="choice label" />
+            ${c.effects
+              .map(
+                (e, j) => `<div class="row" data-effect="${j}">
+              <select data-ekind aria-label="effect kind">
+                ${["set", "bank", "enter", "start_incident", "spine", "step"]
+                  .map((k) => `<option value="${k}"${k === e.kind ? " selected" : ""}>${k}</option>`)
+                  .join("")}
+              </select>
+              <input data-evalue value="${esc(e.value)}" placeholder="value" />
+            </div>`,
+              )
+              .join("")}
+            <button data-add-effect="${i}">Add effect</button>
+          </div>`,
+            )
+            .join("")}
+          <button id="f-add-choice">Add choice</button>
+        </div>`
+            : ""
+        }
+        <textarea id="e-yaml" rows="14" placeholder="YAML">${esc(editorYaml)}</textarea>
         <button id="e-preview">Preview</button>
         <pre>${editorDiff || "No preview."}</pre>
         <p>${editorIssues.map((v) => `${v.severity} ${v.code}: ${v.message}`).join(" · ") || (editorDiff ? "valid" : "")}</p>
@@ -260,24 +325,71 @@ function render(): void {
       editorId = src.id;
       editorPath = src.path;
       editorYaml = src.yaml;
+      editorForm = null;
+      if (src.id.startsWith("scene.")) {
+        const packed = (await api(`/v1/console/canon/form?id=${encodeURIComponent(src.id)}`)) as {
+          form: SceneForm;
+        };
+        editorForm = packed.form;
+      }
       editorDiff = "";
       editorIssues = [];
       render();
     }),
   );
+  document.querySelector("#f-add-choice")?.addEventListener("click", () => {
+    const current = readFormFromDom();
+    if (!current) return;
+    editorForm = { ...current, choices: [...current.choices, { id: "", label: "", effects: [] }] };
+    render();
+  });
+  app.querySelectorAll("[data-add-effect]").forEach((el) =>
+    el.addEventListener("click", () => {
+      const current = readFormFromDom();
+      if (!current) return;
+      const idx = Number((el as HTMLElement).dataset.addEffect);
+      const choices = current.choices.map((c, i) =>
+        i === idx ? { ...c, effects: [...c.effects, { kind: "bank", value: "" }] } : c,
+      );
+      editorForm = { ...current, choices };
+      render();
+    }),
+  );
   document.querySelector("#e-preview")?.addEventListener("click", async () => {
-    editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
     if (!editorPath) return;
-    const preview = (await api("/v1/console/proposals/preview", {
-      method: "POST",
-      body: JSON.stringify({ path: editorPath, after: editorYaml }),
-    })) as { diff: string; validation: Issue[] };
-    editorDiff = preview.diff;
-    editorIssues = preview.validation;
+    const form = readFormFromDom();
+    if (form) {
+      editorForm = form;
+      const preview = (await api("/v1/console/canon/form/preview", {
+        method: "POST",
+        body: JSON.stringify({ id: form.id, form }),
+      })) as { yaml: string; diff: string; validation: Issue[] };
+      editorYaml = preview.yaml;
+      editorDiff = preview.diff;
+      editorIssues = preview.validation;
+    } else {
+      editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
+      const preview = (await api("/v1/console/proposals/preview", {
+        method: "POST",
+        body: JSON.stringify({ path: editorPath, after: editorYaml }),
+      })) as { diff: string; validation: Issue[] };
+      editorDiff = preview.diff;
+      editorIssues = preview.validation;
+    }
     render();
   });
   document.querySelector("#e-queue")?.addEventListener("click", async () => {
-    editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
+    const form = readFormFromDom();
+    if (form) {
+      editorForm = form;
+      const preview = (await api("/v1/console/canon/form/preview", {
+        method: "POST",
+        body: JSON.stringify({ id: form.id, form }),
+      })) as { yaml: string };
+      editorYaml = preview.yaml;
+    } else {
+      editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
+    }
     if (!editorPath) return;
     await api("/v1/console/proposals", {
       method: "POST",

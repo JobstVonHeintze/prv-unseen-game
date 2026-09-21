@@ -8,11 +8,14 @@ import {
   proposalHasErrors,
   readCanonFile,
   searchCanonEntities,
+  sceneFormFromYaml,
+  applySceneForm,
   unifiedDiff,
   writeCanonFile,
   type Canon,
   type Finding,
   type Proposal,
+  type SceneForm,
 } from "@contrejour/canon";
 import {
   consoleView,
@@ -319,6 +322,61 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         return;
       }
       send(res, 200, { id, path: rel, yaml });
+      return;
+    }
+    if (path === "/v1/console/canon/form" && method === "GET") {
+      const id = url.searchParams.get("id") ?? "";
+      const rel = entityRelPath(id);
+      if (!rel) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      const yaml = readCanonFile(root, rel);
+      if (!yaml) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      const form = sceneFormFromYaml(yaml);
+      if (!form) {
+        send(res, 400, { error: "unsupported-type" });
+        return;
+      }
+      send(res, 200, { id, path: rel, form, yaml });
+      return;
+    }
+    if (path === "/v1/console/canon/form/preview" && method === "POST") {
+      const body = (await readBody(req)) as { id?: string; form?: SceneForm };
+      const id = body.id ?? "";
+      const rel = entityRelPath(id);
+      if (!rel || !body.form) {
+        send(res, 400, { error: "invalid-form" });
+        return;
+      }
+      let before = "";
+      try {
+        before = readCanonFile(root, rel);
+      } catch {
+        send(res, 400, { error: "invalid-path" });
+        return;
+      }
+      if (!before) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      if (!sceneFormFromYaml(before)) {
+        send(res, 400, { error: "unsupported-type" });
+        return;
+      }
+      const after = applySceneForm(before, body.form);
+      const preview = previewProposal(live, rel, after);
+      send(res, 200, {
+        entity_id: preview.entityId,
+        path: rel,
+        yaml: after,
+        diff: unifiedDiff(before, after, rel),
+        validation: preview.issues,
+        stored: false,
+      });
       return;
     }
     if (path === "/v1/console/proposals/preview" && method === "POST") {

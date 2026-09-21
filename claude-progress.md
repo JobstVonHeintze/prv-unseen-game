@@ -92,4 +92,10 @@
 - **red:** none for F-08. Commit/push authorized this turn.
 - **next:** structured entity forms; LLM personas; `condition.caio` when that canon exists. Dependabot 3 moderate vulns (out of scope).
 
+## 2026-09-21T04:56:46Z — agent — F-09 scene form and desk manual closed
+
+- **done:** Scene beat/tags/choices edit as fields; `GET/POST /v1/console/canon/form`; preview does not write; Player 404. End-user manual at `docs/manuals/end-user-manual.md`. README and MANUAL.md point humans at it. 27 files / 49 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-21-F-09.md`. Plan `docs/plans/2026-09-21-scene-form-and-manual.md` Status: done. Learning: `docs/learnings/2026-09-21-scene-form-preserves-other-keys.md`. Browser: first-night Beat + Preview valid; YAML on disk unchanged.
+- **red:** none for F-09. Commit/push authorized after the manual.
+- **next:** LLM personas (self-skip without credentials); forms for other entity types; `condition.caio` when that canon exists.
+
 

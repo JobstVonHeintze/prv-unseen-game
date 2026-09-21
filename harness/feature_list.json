@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "contrejour",
-  "updated_at": "2026-09-21T04:43:41Z",
+  "updated_at": "2026-09-21T04:56:46Z",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -245,6 +245,34 @@
       "owner": "sprint-runner",
       "created_at": "2026-09-21T04:42:00Z",
       "updated_at": "2026-09-21T04:43:41Z"
+    },
+    {
+      "id": "F-09",
+      "title": "Structured scene form and desk manual",
+      "priority": "P0",
+      "area": "authoring",
+      "user_behavior": "An author edits a scene's beat, tags, and choices as fields, previews a proposal without writing, and can read a desk manual; Player never sees the form.",
+      "verification_commands": [
+        "pnpm exec vitest run packages/canon/src/scene-form.test.ts tests/contract/scene-form.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run packages/canon/src/scene-form.test.ts tests/contract/scene-form.test.ts --reporter=dot",
+          "ts": "2026-09-21T04:55:54Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-21T04:56:46Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "sprint-runner",
+      "created_at": "2026-09-21T04:54:00Z",
+      "updated_at": "2026-09-21T04:56:46Z"
     }
   ]
 }

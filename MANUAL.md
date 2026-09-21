@@ -3,6 +3,9 @@
 > This is the user manual for the **spec-driven agentic scaffold** inside this
 > repository. It explains every function, why each one exists, and how to use
 > them day to day. If you're new here, read this file before CLAUDE.md.
+>
+> The **product** desk (Player, Console, rehearsal, proposals) is documented in
+> [`docs/manuals/end-user-manual.md`](docs/manuals/end-user-manual.md).
 
 ## What this scaffold is
 
