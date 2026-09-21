@@ -188,8 +188,14 @@ None. No accounts, billing, or team roles. The desk is local-first.
 `commit: ask` in the repo contract: a human still owns git push unless
 they grant it.
 
-Coming later (not shipped): LLM personas, structured forms for every
-entity type, a generated 2D plan from the space graph, hosted playtest.
+Coming later (not shipped): a live LLM persona driver, structured forms
+for every entity type, a generated 2D plan from the space graph, hosted
+playtest.
+
+`POST /v1/console/rehearsals` accepts `personas: ["curious"]`. Without
+`CONTREJOUR_LLM_URL` and `CONTREJOUR_LLM_KEY` the response lists
+`skipped_personas` and `persona_skip_reason: no-credentials`. The desk
+Run button does not send personas.
 
 ## Troubleshooting
 
@@ -214,6 +220,7 @@ be renamed; the ids stay.
 
 - **2026-09-21** — Scene form (beat, tags, choices) on the Console.
   End-user manual first published. Six rehearsal bots. Findings can
-  become pending proposals.
+  become pending proposals. Rehearsal `personas` skip without
+  credentials; the live driver is not shipped.
 - **2026-09-20** — Walking skeleton, rain incident, proposals, VIP
   demand, entity search, rehearsal desk.

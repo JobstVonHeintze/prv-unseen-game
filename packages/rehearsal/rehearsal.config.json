@@ -1,0 +1,13 @@
+{
+  "model": {
+    "id_env": "CONTREJOUR_LLM_MODEL",
+    "url_env": "CONTREJOUR_LLM_URL",
+    "key_env": "CONTREJOUR_LLM_KEY",
+    "max_calls_per_run": 40
+  },
+  "personas": {
+    "curious": {
+      "brief": "Looks into new rooms. Asks. Does not use leverage."
+    }
+  }
+}

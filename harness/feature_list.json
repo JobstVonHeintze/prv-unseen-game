@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "contrejour",
-  "updated_at": "2026-09-21T04:56:46Z",
+  "updated_at": "2026-09-21T04:58:26Z",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -273,6 +273,34 @@
       "owner": "sprint-runner",
       "created_at": "2026-09-21T04:54:00Z",
       "updated_at": "2026-09-21T04:56:46Z"
+    },
+    {
+      "id": "F-10",
+      "title": "LLM personas skip without credentials",
+      "priority": "P0",
+      "area": "rehearsal",
+      "user_behavior": "An author can POST a named persona on a rehearsal; without credentials the run skips that persona, writes no canon, and does not fail the build; Player never sees personas.",
+      "verification_commands": [
+        "pnpm exec vitest run packages/rehearsal/src/personas.test.ts tests/contract/personas.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run packages/rehearsal/src/personas.test.ts tests/contract/personas.test.ts --reporter=dot",
+          "ts": "2026-09-21T04:58:21Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-21T04:58:26Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "sprint-runner",
+      "created_at": "2026-09-21T04:58:00Z",
+      "updated_at": "2026-09-21T04:58:26Z"
     }
   ]
 }

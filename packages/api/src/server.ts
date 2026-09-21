@@ -30,6 +30,8 @@ import {
 } from "@contrejour/engine";
 import {
   isBot,
+  isPersona,
+  personaSkipReason,
   compileReport,
   findingsFromReport,
   playScript,
@@ -247,12 +249,20 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         seed_base?: number;
         max_evenings?: number;
         queue_proposals?: boolean;
+        personas?: string[];
       };
-      const bots = (body.bots?.length ? body.bots : ["drifter"]).map((b) => b.trim());
+      const personas = (body.personas ?? []).map((p) => p.trim()).filter(Boolean);
+      if (personas.some((p) => !isPersona(p))) {
+        send(res, 400, { error: "unknown-persona", personas });
+        return;
+      }
+      const bots = (body.bots?.length ? body.bots : personas.length ? [] : ["drifter"]).map((b) => b.trim());
       if (bots.some((b) => !isBot(b))) {
         send(res, 400, { error: "unknown-bot", bots });
         return;
       }
+      const skipped_personas = personas.length ? personas : [];
+      const persona_skip_reason = personas.length ? personaSkipReason() : null;
       const n = Math.min(8, Math.max(1, Math.floor(body.n ?? 1)));
       const seedBase = typeof body.seed_base === "number" ? body.seed_base : 1;
       const maxEvenings = Math.min(80, Math.max(1, Math.floor(body.max_evenings ?? 80)));
@@ -270,7 +280,9 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
           );
         }
       }
-      const compiled = compileReport(live, traces);
+      const compiled = traces.length
+        ? compileReport(live, traces)
+        : { traces: [], entered_scenes: [] as string[], missed_gate_scenes: [] as Array<{ gateId: string; sceneId: string }> };
       const drafts = findingsFromReport(compiled);
       const findings = drafts.map((d) => store.addFinding(d));
       const proposals = body.queue_proposals
@@ -287,6 +299,9 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         seed_base: seedBase,
         max_evenings: maxEvenings,
         queue_proposals: Boolean(body.queue_proposals),
+        personas,
+        skipped_personas,
+        persona_skip_reason,
         ...compiled,
         finding_ids: findings.map((f) => f.id),
         proposal_ids: proposals.map((p) => p.id),

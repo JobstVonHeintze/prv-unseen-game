@@ -98,4 +98,10 @@
 - **red:** none for F-09. Commit/push authorized after the manual.
 - **next:** LLM personas (self-skip without credentials); forms for other entity types; `condition.caio` when that canon exists.
 
+## 2026-09-21T04:58:26Z — agent — F-10 persona skip closed
+
+- **done:** `POST /v1/console/rehearsals` accepts `personas: ["curious"]`. Missing `CONTREJOUR_LLM_URL` / `CONTREJOUR_LLM_KEY` → `skipped_personas` + `no-credentials`. Empty traces file no findings. Unknown persona 400. Player 404. Live driver not shipped. Manual change log updated. 29 files / 51 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-21-F-10.md`. Plan `docs/plans/2026-09-21-llm-personas-skip.md` Status: done.
+- **red:** none for F-10. Commit/push authorized.
+- **next:** live persona driver when a provider is granted; forms for other entity types; `condition.caio` when that canon exists.
+
 
