@@ -1,56 +1,24 @@
+export interface PlayerViewSlice {
+  runId?: string;
+  currentScene: { id: string; choices: Array<{ id: string }> } | null;
+  sceneOptions: Array<{ id: string }>;
+  canAdvance: boolean;
+  askingTheory: boolean;
+  theoryOptions: string[];
+  vault?: Array<{ secretId: string }>;
+}
+
 export interface PlayerClient {
-  createRun(seed: number): Promise<{
-    runId: string;
-    currentScene: { id: string; choices: Array<{ id: string }> } | null;
-    sceneOptions: Array<{ id: string }>;
-    canAdvance: boolean;
-    askingTheory: boolean;
-    theoryOptions: string[];
-  }>;
-  view(runId: string): Promise<{
-    runId: string;
-    currentScene: { id: string; choices: Array<{ id: string }> } | null;
-    sceneOptions: Array<{ id: string }>;
-    canAdvance: boolean;
-    askingTheory: boolean;
-    theoryOptions: string[];
-  }>;
-  act(runId: string, action: Record<string, unknown>): Promise<{
-    currentScene: { id: string; choices: Array<{ id: string }> } | null;
-    sceneOptions: Array<{ id: string }>;
-    canAdvance: boolean;
-    askingTheory: boolean;
-    theoryOptions: string[];
-  }>;
+  createRun(seed: number): Promise<PlayerViewSlice & { runId: string }>;
+  view(runId: string): Promise<PlayerViewSlice & { runId: string }>;
+  act(runId: string, action: Record<string, unknown>): Promise<PlayerViewSlice>;
   timeline(runId: string): Promise<{ evenings: Array<{ evening: number; gates: string[] }> }>;
 }
 
 export async function runDrifter(client: PlayerClient, seed = 1, maxEvenings = 80): Promise<string[]> {
-  const first = await client.createRun(seed);
-  const runId = first.runId;
-  let view = first;
-  let playedFree = false;
-  for (let i = 0; i < maxEvenings; i += 1) {
-    if (view.askingTheory && view.theoryOptions[0]) {
-      view = await client.act(runId, { type: "answer_theory", answer: view.theoryOptions[0] });
-    } else if (view.currentScene) {
-      const choice = view.currentScene.choices[0];
-      if (choice) view = await client.act(runId, { type: "choose", choiceId: choice.id });
-      else break;
-      playedFree = true;
-    } else if (!playedFree && view.sceneOptions[0]) {
-      view = await client.act(runId, { type: "enter_scene", sceneId: view.sceneOptions[0].id });
-    } else if (view.canAdvance) {
-      view = await client.act(runId, { type: "advance_evening" });
-      playedFree = false;
-    } else {
-      break;
-    }
-    const tl = await client.timeline(runId);
-    if (tl.evenings.some((e) => e.gates.includes("gate.p1.g7"))) break;
-  }
-  const tl = await client.timeline(runId);
-  return tl.evenings.flatMap((e) => e.gates);
+  const { playScript } = await import("./play.js");
+  const trace = await playScript(client, { seed, maxEvenings, pick: "first", bot: "drifter" });
+  return trace.gates;
 }
 
 export async function fetchClient(base: string): Promise<PlayerClient> {

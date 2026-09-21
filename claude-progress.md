@@ -62,5 +62,22 @@
 - **red:** none. First commit `c372002` pushed to `origin/main`.
 - **next:** after push, fresh session may start F-04 or the entity editor. Do not start them in this closeout.
 
+## 2026-09-20T21:03:27Z — agent — F-04 playable Tilde VIP demand closed
+
+- **done:** VIP evening after provoked watch; film banks `secret.s-tilde-vip`; `send_secret` no-ops without vault; Tilde send enters `scene.conduct-demand`. Messages ranks vault-named recipients first (Tilde was hidden by slice-12). 19 files / 34 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-20-F-04.md`. Plan `docs/plans/2026-09-20-tilde-vip-demand.md` Status: done. Learning: `docs/learnings/2026-09-20-vault-recipients-before-slice.md`. `.gitignore` now ignores only `/secrets/` so `canon/secrets/` can be committed. Harness reset to init.
+- **red:** none for F-04. Working tree uncommitted (`commit: ask`).
+- **next:** fresh session: `bash init.sh`, then the entity editor (search/edit + proposal preview). Do not start it here. Commit/push this tree only when asked.
+
+## 2026-09-20T21:49:23Z — agent — F-05 Console entity editor closed
+
+- **done:** Search/source/preview on Console; queue still goes through proposals; Player 404s on catalogue routes. 21 files / 37 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-20-F-05.md`. Plan `docs/plans/2026-09-20-entity-editor.md` Status: done. Learning: `docs/learnings/2026-09-20-preview-before-proposal-id.md`. Browser: `tilde` opens `scene.tilde-vip`, preview valid, reject left the beat unchanged. Harness reset to init.
+- **red:** none for F-05. F-04 + F-05 tree still uncommitted (`commit: ask`).
+- **next:** fresh session. Carry-forward: structured forms later; rehearsal still 404. Commit/push only when asked.
+
+## 2026-09-20T22:00:13Z — agent — F-06 rehearsal desk closed
+
+- **done:** `POST /v1/console/rehearsals` runs drifter/dark-optimiser on the Player action path; report names missed gate scenes; those become `author: rehearsal` findings. Short run files a finding; full drifter g1–g7 missed none. Player 404s. 23 files / 39 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-20-F-06.md`. Plan `docs/plans/2026-09-20-rehearsal-desk.md` Status: done. Learning: `docs/learnings/2026-09-20-rehearsal-note-scene-after-advance.md`. Browser: Run drifter listed all seven gates. Harness reset to init.
+- **red:** none for F-06. F-04 through F-06 still uncommitted (`commit: ask`).
+- **next:** fresh session. Carry-forward: more scripted bots, findings→proposal drafts, structured forms. Commit/push only when asked.
 
 

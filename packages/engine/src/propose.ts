@@ -283,6 +283,7 @@ export function propose(canon: Canon, events: Event[], action: Action, rng: Seed
     case "send_secret": {
       const secret = canon.secrets.find((s) => s.id === action.secretId);
       if (!secret) return events;
+      if (!state.vault.some((v) => v.secretId === secret.id)) return events;
       const useClass = classifyUse(secret, action.recipientId);
       const effects =
         useClass === "leverage"

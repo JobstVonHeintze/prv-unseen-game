@@ -1,0 +1,34 @@
+id: scene.tilde-vip
+part: 1
+slot: evening
+location: loc.galerie-restrepo.l1
+node: node.galerie.vip
+cast: [char.elena, char.tilde]
+tags: []
+requires:
+  phase_min: 0
+  all: [flag.reached-gallery, flag.watch.provoked]
+  none: []
+beat: >
+  A locked room off the white cube. Tilde is already there, with two guests
+  who do not look at each other.
+spice:
+  l1: >
+    She kisses one, then the other. Two evenings in one hour. Neither sees
+    the tote on Elena's lap.
+  l2: >
+    Hands, mouths, the same two. The lock is for the corridor, not for her.
+    The tote is open.
+  l3: >
+    [LEVEL 3 PLACEHOLDER: hand-written] Brief: Tilde with both guests,
+    explicit, two beats. Elena films. Fade afterwards. No coercion tag.
+choices:
+  - id: leave-vip
+    label: "Leave before anyone names her."
+    effects: []
+  - id: film-tote
+    label: "Keep the tote open. Let the phone see."
+    effects:
+      - bank: secret.s-tilde-vip
+      - set: flag.taken.tilde-vip
+hooks_back: [secret.s-tilde-vip]

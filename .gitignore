@@ -27,7 +27,8 @@ target/
 .env.*.local
 *.pem
 *.key
-secrets/
+# Credential dumps at repo root only. Canon product secrets live in canon/secrets/.
+/secrets/
 
 .idea/
 .vscode/
@@ -78,5 +79,6 @@ data/uploads/
 data/findings/
 data/storyboards/
 data/proposals/
+data/rehearsals/
 out/*.sqlite
 *.tsbuildinfo

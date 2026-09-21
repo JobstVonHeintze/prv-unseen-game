@@ -85,15 +85,30 @@ export function playerView(canon: Canon, state: State, _events: readonly Event[]
       marked: c.marked,
       blocked: c.blocked,
     })),
-    recipients: canon.characters
-      .filter((c) => c.id !== "char.elena")
-      .slice(0, 12)
-      .map((c) => ({ id: c.id, name: c.display_name })),
+    recipients: messageRecipients(canon, state),
     canAdvance: !state.currentScene && !state.incident,
     canRewindTo,
     felt: feltLines(canon, state),
     spiceLevel: state.spiceLevel,
   };
+}
+
+/** Vault-relevant first so a taped secret can be sent to the named person. */
+function messageRecipients(canon: Canon, state: State): Array<{ id: string; name: string }> {
+  const named = new Set<string>();
+  for (const held of state.vault) {
+    const secret = canon.secrets.find((s) => s.id === held.secretId);
+    if (!secret) continue;
+    for (const id of [...secret.uses.tell.to, ...secret.uses.leverage.to, ...secret.uses.trade.to]) {
+      if (id !== "char.elena") named.add(id);
+    }
+  }
+  const byId = new Map(canon.characters.map((c) => [c.id, c]));
+  const first = [...named]
+    .map((id) => byId.get(id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
+  const rest = canon.characters.filter((c) => c.id !== "char.elena" && !named.has(c.id));
+  return [...first, ...rest].slice(0, 12).map((c) => ({ id: c.id, name: c.display_name }));
 }
 
 export const PLAYER_VIEW_KEYS = [

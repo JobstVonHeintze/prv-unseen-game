@@ -13,6 +13,7 @@ export function createStore(dataDir: string) {
   mkdirSync(join(dataDir, "findings"), { recursive: true });
   mkdirSync(join(dataDir, "storyboards"), { recursive: true });
   mkdirSync(join(dataDir, "proposals"), { recursive: true });
+  mkdirSync(join(dataDir, "rehearsals"), { recursive: true });
 
   const runPath = (id: string) => join(dataDir, "runs", `${id}.json`);
 
@@ -100,6 +101,22 @@ export function createStore(dataDir: string) {
       const next = ProposalSchema.parse(proposal);
       writeFileSync(join(dataDir, "proposals", `${next.id}.json`), JSON.stringify(next, null, 2));
       return next;
+    },
+    saveRehearsal(record: { id: string; [key: string]: unknown }): { id: string; [key: string]: unknown } {
+      writeFileSync(join(dataDir, "rehearsals", `${record.id}.json`), JSON.stringify(record, null, 2));
+      return record;
+    },
+    getRehearsal(id: string): { id: string; [key: string]: unknown } | null {
+      const path = join(dataDir, "rehearsals", `${id}.json`);
+      if (!existsSync(path)) return null;
+      return JSON.parse(readFileSync(path, "utf8")) as { id: string; [key: string]: unknown };
+    },
+    listRehearsals(): Array<{ id: string; [key: string]: unknown }> {
+      const dir = join(dataDir, "rehearsals");
+      if (!existsSync(dir)) return [];
+      return readdirSync(dir)
+        .filter((f) => f.endsWith(".json"))
+        .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as { id: string; [key: string]: unknown });
     },
     listProposals(): Proposal[] {
       const dir = join(dataDir, "proposals");

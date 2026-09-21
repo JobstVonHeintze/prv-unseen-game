@@ -12,6 +12,7 @@
   "dependencies": {
     "@contrejour/canon": "workspace:*",
     "@contrejour/engine": "workspace:*",
-    "@contrejour/renderer": "workspace:*"
+    "@contrejour/renderer": "workspace:*",
+    "@contrejour/rehearsal": "workspace:*"
   }
 }

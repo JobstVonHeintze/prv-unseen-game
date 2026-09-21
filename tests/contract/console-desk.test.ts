@@ -41,7 +41,11 @@ describe("Console desk", () => {
     });
     expect((patched.body as { prompt_history: unknown[] }).prompt_history).toHaveLength(1);
     expect((patched.body as { prompt: string }).prompt).toContain("rain heavier");
-    const rehearsals = await json(s.url, "/v1/console/rehearsals", { method: "POST", body: "{}" });
-    expect(rehearsals.status).toBe(404);
+    const rehearsals = await json(s.url, "/v1/console/rehearsals", {
+      method: "POST",
+      body: JSON.stringify({ bots: ["drifter"], max_evenings: 1 }),
+    });
+    expect(rehearsals.status).toBe(201);
+    expect((rehearsals.body as { traces: unknown[] }).traces.length).toBe(1);
   });
 });

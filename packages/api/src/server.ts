@@ -3,9 +3,11 @@ import { randomUUID } from "node:crypto";
 import {
   assertValid,
   loadCanon,
+  entityRelPath,
   previewProposal,
   proposalHasErrors,
   readCanonFile,
+  searchCanonEntities,
   unifiedDiff,
   writeCanonFile,
   type Canon,
@@ -22,7 +24,51 @@ import {
   type Action,
   type Event,
 } from "@contrejour/engine";
+import {
+  BOT_PICK,
+  compileReport,
+  findingsFromReport,
+  playScript,
+  type PlayerClient,
+} from "@contrejour/rehearsal";
 import type { Store } from "./store.js";
+
+function inProcessPlayer(getLive: () => Canon, store: Store): PlayerClient {
+  return {
+    async createRun(seed) {
+      const runId = randomUUID();
+      const events = startRun(getLive(), seed, "honest", runId);
+      store.saveRun(runId, events);
+      return playerView(getLive(), fold(getLive(), events), events);
+    },
+    async view(runId) {
+      const rec = store.loadRun(runId);
+      if (!rec) throw new Error("run-not-found");
+      return playerView(getLive(), fold(getLive(), rec.events), rec.events);
+    },
+    async act(runId, action) {
+      const rec = store.loadRun(runId);
+      if (!rec) throw new Error("run-not-found");
+      const liveCanon = getLive();
+      const state = fold(liveCanon, rec.events);
+      const rng = createRng(state.header.seed + rec.events.length);
+      const events = propose(liveCanon, rec.events, action as Action, rng);
+      store.saveRun(runId, events);
+      return playerView(liveCanon, fold(liveCanon, events), events);
+    },
+    async timeline(runId) {
+      const rec = store.loadRun(runId);
+      if (!rec) throw new Error("run-not-found");
+      const events = rec.events;
+      return {
+        evenings: [...new Set(events.map((e) => e.t))].sort((a, b) => a - b).map((t) => ({
+          evening: t,
+          gates: events.filter((e) => e.t === t && e.kind === "gate.fired").map((e) => String(e.payload.gateId ?? "")),
+        })),
+      };
+    },
+  };
+}
 
 function readBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -152,8 +198,106 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
       }
     }
 
-    if (path === "/v1/console/rehearsals") {
-      notFound(res);
+    if (path === "/v1/console/rehearsals" && method === "GET") {
+      send(res, 200, store.listRehearsals());
+      return;
+    }
+    if (path === "/v1/console/rehearsals" && method === "POST") {
+      const body = (await readBody(req)) as {
+        bots?: string[];
+        n?: number;
+        seed_base?: number;
+        max_evenings?: number;
+      };
+      const bots = (body.bots?.length ? body.bots : ["drifter"]).map((b) => b.trim());
+      if (bots.some((b) => !BOT_PICK[b])) {
+        send(res, 400, { error: "unknown-bot", bots });
+        return;
+      }
+      const n = Math.min(8, Math.max(1, Math.floor(body.n ?? 1)));
+      const seedBase = typeof body.seed_base === "number" ? body.seed_base : 1;
+      const maxEvenings = Math.min(80, Math.max(1, Math.floor(body.max_evenings ?? 80)));
+      const client = inProcessPlayer(() => live, store);
+      const traces = [];
+      for (let i = 0; i < n; i += 1) {
+        for (const bot of bots) {
+          traces.push(
+            await playScript(client, {
+              seed: seedBase + i,
+              maxEvenings,
+              pick: BOT_PICK[bot]!,
+              bot,
+            }),
+          );
+        }
+      }
+      const compiled = compileReport(live, traces);
+      const drafts = findingsFromReport(compiled);
+      const findings = drafts.map((d) => store.addFinding(d));
+      const record = store.saveRehearsal({
+        id: `rehearsal.${randomUUID()}`,
+        created_at: new Date().toISOString(),
+        bots,
+        n,
+        seed_base: seedBase,
+        max_evenings: maxEvenings,
+        ...compiled,
+        finding_ids: findings.map((f) => f.id),
+      });
+      send(res, 201, { ...record, findings });
+      return;
+    }
+    const rehearsalMatch = path.match(/^\/v1\/console\/rehearsals\/([^/]+)(?:\/(report))?$/);
+    if (rehearsalMatch && method === "GET") {
+      const rec = store.getRehearsal(rehearsalMatch[1]!);
+      if (!rec) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      send(res, 200, rec);
+      return;
+    }
+
+    if (path === "/v1/console/canon/search" && method === "GET") {
+      send(res, 200, searchCanonEntities(live, url.searchParams.get("q") ?? ""));
+      return;
+    }
+    if (path === "/v1/console/canon/source" && method === "GET") {
+      const id = url.searchParams.get("id") ?? "";
+      const rel = entityRelPath(id);
+      if (!rel) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      const yaml = readCanonFile(root, rel);
+      if (!yaml) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      send(res, 200, { id, path: rel, yaml });
+      return;
+    }
+    if (path === "/v1/console/proposals/preview" && method === "POST") {
+      const body = (await readBody(req)) as { path?: string; after?: string };
+      if (!body.path || typeof body.after !== "string") {
+        send(res, 400, { error: "invalid-proposal" });
+        return;
+      }
+      let before = "";
+      try {
+        before = readCanonFile(root, body.path);
+      } catch {
+        send(res, 400, { error: "invalid-path" });
+        return;
+      }
+      const preview = previewProposal(live, body.path, body.after);
+      send(res, 200, {
+        entity_id: preview.entityId,
+        path: body.path,
+        diff: unifiedDiff(before, body.after, body.path),
+        validation: preview.issues,
+        stored: false,
+      });
       return;
     }
 

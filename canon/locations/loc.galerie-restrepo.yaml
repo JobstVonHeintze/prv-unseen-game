@@ -11,5 +11,9 @@ nodes:
     level: l2
     facts: ["rail of spare shirts", "door does not lock"]
     cameras: []
+  - id: node.galerie.vip
+    level: l1
+    facts: ["locked room", "two guests", "the handle is contrejour"]
 edges:
   - {from: node.galerie.floor, to: node.galerie.changing, kind: stairs, requires: flag.gallery-upstairs}
+  - {from: node.galerie.floor, to: node.galerie.vip, kind: door}

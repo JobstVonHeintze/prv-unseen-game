@@ -84,6 +84,26 @@ describe("spice-scaled follow-ups", () => {
     expect(at3.currentScene?.text).not.toMatch(/PLACEHOLDER/);
 
     await act2({ type: "choose", choiceId: "continue" });
+    const skipped = await act2({ type: "send_secret", secretId: "secret.s-tilde-vip", recipientId: "char.tilde" });
+    expect((skipped.body as { currentScene: { id: string } | null }).currentScene).toBeNull();
+    await act2({ type: "enter_scene", sceneId: "scene.tilde-vip" });
+    await act2({ type: "set_spice", level: 1 });
+    const vip1 = (await json(s.url, `/v1/runs/${id2}/view`)).body as { currentScene: { id: string; text: string } | null };
+    expect(vip1.currentScene?.id).toBe("scene.tilde-vip");
+    expect(vip1.currentScene?.text).toContain("kisses");
+    expect(vip1.currentScene?.text).not.toMatch(/PLACEHOLDER/);
+    await act2({ type: "set_spice", level: 2 });
+    const vip = (await json(s.url, `/v1/runs/${id2}/view`)).body as { currentScene: { id: string; text: string } | null };
+    expect(vip.currentScene?.id).toBe("scene.tilde-vip");
+    expect(vip.currentScene?.text).toContain("Hands, mouths");
+    expect(vip.currentScene?.text).not.toMatch(/PLACEHOLDER/);
+    await act2({ type: "choose", choiceId: "film-tote" });
+    const taped = (await json(s.url, `/v1/runs/${id2}/view`)).body as {
+      vault: Array<{ secretId: string }>;
+      recipients: Array<{ id: string }>;
+    };
+    expect(taped.vault.some((v) => v.secretId === "secret.s-tilde-vip")).toBe(true);
+    expect(taped.recipients.some((r) => r.id === "char.tilde")).toBe(true);
     await act2({ type: "send_secret", secretId: "secret.s-tilde-vip", recipientId: "char.tilde" });
     const afterSend = (await json(s.url, `/v1/runs/${id2}/view`)).body as {
       currentScene: { id: string; choices: Array<{ id: string }> } | null;

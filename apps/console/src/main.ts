@@ -12,6 +12,14 @@ type Proposal = {
   reject_reason?: string;
   validation: Array<{ severity: string; code: string; message: string }>;
 };
+type EntityRef = { id: string; type: string; path: string; label: string };
+type Issue = { severity: string; code: string; message: string };
+type Rehearsal = {
+  id: string;
+  missed_gate_scenes: Array<{ gateId: string; sceneId: string }>;
+  traces: Array<{ bot: string; gates: string[] }>;
+  findings?: Array<{ id: string; title: string }>;
+};
 
 const app = document.querySelector("#app")!;
 let gates: Gate[] = [];
@@ -24,6 +32,14 @@ let runId = "";
 let state: unknown = null;
 let events: unknown[] = [];
 let proposals: Proposal[] = [];
+let entities: EntityRef[] = [];
+let editorQuery = "";
+let editorId = "";
+let editorPath = "";
+let editorYaml = "";
+let editorDiff = "";
+let editorIssues: Issue[] = [];
+let lastRehearsal: Rehearsal | null = null;
 
 async function api(path: string, init?: RequestInit) {
   const res = await fetch(path, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
@@ -38,6 +54,7 @@ async function refresh(): Promise<void> {
   findings = await api("/v1/console/findings");
   boards = await api("/v1/console/storyboards");
   proposals = await api("/v1/console/proposals");
+  entities = await api("/v1/console/canon/search");
   render();
 }
 
@@ -70,6 +87,26 @@ function render(): void {
       <h2>${sel}</h2>
       <div class="card schematic">${schematic()}</div>
       <div class="card">
+        <h2>Canon</h2>
+        <input id="e-search" placeholder="Search id, name, beat" value="${editorQuery.replaceAll('"', "&quot;")}" />
+        <div class="row">${entities
+          .filter((e) => {
+            const q = editorQuery.trim().toLowerCase();
+            if (!q) return ["scenes", "secrets", "conditions", "incidents"].includes(e.type);
+            return `${e.id} ${e.label} ${e.path}`.toLowerCase().includes(q);
+          })
+          .slice(0, 12)
+          .map((e) => `<button data-entity="${e.id}">${e.id}</button>`)
+          .join("")}</div>
+        <p>${editorPath || "Open an entity."}</p>
+        <textarea id="e-yaml" rows="14" placeholder="YAML">${editorYaml.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</textarea>
+        <button id="e-preview">Preview</button>
+        <pre>${editorDiff || "No preview."}</pre>
+        <p>${editorIssues.map((v) => `${v.severity} ${v.code}: ${v.message}`).join(" · ") || (editorDiff ? "valid" : "")}</p>
+        <input id="e-rationale" placeholder="Rationale" />
+        <button class="primary" id="e-queue">Queue proposal</button>
+      </div>
+      <div class="card">
         <h2>Conditions</h2>
         ${
           state && typeof state === "object" && "conditions" in state
@@ -88,6 +125,15 @@ function render(): void {
       </div>
     </main>
     <aside>
+      <h2>Rehearsal</h2>
+      <button class="primary" id="r-run">Run drifter</button>
+      ${
+        lastRehearsal
+          ? `<div class="card"><p>${lastRehearsal.id}</p>
+        <p>${lastRehearsal.traces[0]?.gates.join(" ") || "no gates"}</p>
+        <p>missed ${lastRehearsal.missed_gate_scenes.map((m) => m.sceneId).join(" ") || "none"}</p></div>`
+          : "<p>No batch this session.</p>"
+      }
       <h2>Findings</h2>
       ${related.map((f) => `<div class="card"><strong>${f.category}</strong> ${f.detail_axis ?? ""}<p>${f.title}</p><p>${f.body}</p></div>`).join("") || "<p>None on this entity.</p>"}
       ${findings.filter((f) => !relatedIds.has(f.entity_id)).map((f) => `<p>${f.entity_id}: ${f.title}</p>`).join("")}
@@ -120,6 +166,13 @@ function render(): void {
     selected = (el as HTMLElement).dataset.id ?? null;
     render();
   }));
+  document.querySelector("#r-run")?.addEventListener("click", async () => {
+    lastRehearsal = (await api("/v1/console/rehearsals", {
+      method: "POST",
+      body: JSON.stringify({ bots: ["drifter"], n: 1, seed_base: 11, max_evenings: 80 }),
+    })) as Rehearsal;
+    await refresh();
+  });
   document.querySelector("#load-run")?.addEventListener("click", async () => {
     runId = (document.querySelector("#run") as HTMLInputElement).value.trim();
     state = await api(`/v1/console/runs/${runId}/state`);
@@ -165,6 +218,57 @@ function render(): void {
       await refresh();
     }),
   );
+  document.querySelector("#e-search")?.addEventListener("input", (ev) => {
+    editorQuery = (ev.target as HTMLInputElement).value;
+    render();
+    const box = document.querySelector("#e-search") as HTMLInputElement | null;
+    box?.focus();
+    box?.setSelectionRange(editorQuery.length, editorQuery.length);
+  });
+  app.querySelectorAll("[data-entity]").forEach((el) =>
+    el.addEventListener("click", async () => {
+      const id = (el as HTMLElement).dataset.entity ?? "";
+      const src = (await api(`/v1/console/canon/source?id=${encodeURIComponent(id)}`)) as {
+        id: string;
+        path: string;
+        yaml: string;
+      };
+      editorId = src.id;
+      editorPath = src.path;
+      editorYaml = src.yaml;
+      editorDiff = "";
+      editorIssues = [];
+      render();
+    }),
+  );
+  document.querySelector("#e-preview")?.addEventListener("click", async () => {
+    editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
+    if (!editorPath) return;
+    const preview = (await api("/v1/console/proposals/preview", {
+      method: "POST",
+      body: JSON.stringify({ path: editorPath, after: editorYaml }),
+    })) as { diff: string; validation: Issue[] };
+    editorDiff = preview.diff;
+    editorIssues = preview.validation;
+    render();
+  });
+  document.querySelector("#e-queue")?.addEventListener("click", async () => {
+    editorYaml = (document.querySelector("#e-yaml") as HTMLTextAreaElement).value;
+    if (!editorPath) return;
+    await api("/v1/console/proposals", {
+      method: "POST",
+      body: JSON.stringify({
+        path: editorPath,
+        after: editorYaml,
+        rationale: (document.querySelector("#e-rationale") as HTMLInputElement).value,
+        author: "human",
+        entity_id: editorId,
+      }),
+    });
+    editorDiff = "";
+    editorIssues = [];
+    await refresh();
+  });
   document.querySelector("#edit-board")?.addEventListener("click", async () => {
     const last = boards.filter((b) => b.entity_id === sel).at(-1);
     if (!last) return;

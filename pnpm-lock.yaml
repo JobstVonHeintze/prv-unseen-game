@@ -57,6 +57,9 @@ importers:
       '@contrejour/engine':
         specifier: workspace:*
         version: link:../engine
+      '@contrejour/rehearsal':
+        specifier: workspace:*
+        version: link:../rehearsal
       '@contrejour/renderer':
         specifier: workspace:*
         version: link:../renderer
@@ -76,7 +79,11 @@ importers:
         specifier: workspace:*
         version: link:../canon
 
-  packages/rehearsal: {}
+  packages/rehearsal:
+    dependencies:
+      '@contrejour/canon':
+        specifier: workspace:*
+        version: link:../canon
 
   packages/renderer:
     dependencies:

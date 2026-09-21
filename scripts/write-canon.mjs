@@ -543,8 +543,12 @@ nodes:
   - id: node.galerie.changing
     level: l2
     facts: ["rail of spare shirts", "door does not lock"]
+  - id: node.galerie.vip
+    level: l1
+    facts: ["locked room", "two guests", "the handle is contrejour"]
 edges:
   - {from: node.galerie.floor, to: node.galerie.changing, kind: stairs, requires: flag.gallery-upstairs}
+  - {from: node.galerie.floor, to: node.galerie.vip, kind: door}
 `,
 );
 
@@ -803,6 +807,46 @@ hooks_back: [secret.s-tilde-vip]
 );
 
 w(
+  "scenes",
+  "scene.tilde-vip.yaml",
+  `id: scene.tilde-vip
+part: 1
+slot: evening
+location: loc.galerie-restrepo.l1
+node: node.galerie.vip
+cast: [char.elena, char.tilde]
+tags: []
+requires:
+  phase_min: 0
+  all: [flag.reached-gallery, flag.watch.provoked]
+  none: []
+beat: >
+  A locked room off the white cube. Tilde is already there, with two guests
+  who do not look at each other.
+spice:
+  l1: >
+    She kisses one, then the other. Two evenings in one hour. Neither sees
+    the tote on Elena's lap.
+  l2: >
+    Hands, mouths, the same two. The lock is for the corridor, not for her.
+    The tote is open.
+  l3: >
+    [LEVEL 3 PLACEHOLDER: hand-written] Brief: Tilde with both guests,
+    explicit, two beats. Elena films. Fade afterwards. No coercion tag.
+choices:
+  - id: leave-vip
+    label: "Leave before anyone names her."
+    effects: []
+  - id: film-tote
+    label: "Keep the tote open. Let the phone see."
+    effects:
+      - bank: secret.s-tilde-vip
+      - set: flag.taken.tilde-vip
+hooks_back: [secret.s-tilde-vip]
+`,
+);
+
+w(
   "secrets",
   "secret.s-changing.yaml",
   `id: secret.s-changing
@@ -849,8 +893,8 @@ spice:
   l3: "[LEVEL 3 PLACEHOLDER: hand-written] Brief: Tilde with both guests, explicit, two events. Elena has the tape."
 capture:
   mode: hidden-video
-  node: node.galerie.floor
-  phase_min: 2
+  node: node.galerie.vip
+  phase_min: 0
 proof: recording
 uses:
   keep: { effects: [] }
