@@ -34,6 +34,11 @@ export function createStore(dataDir: string) {
       writeFileSync(join(dataDir, "findings", `${finding.id}.json`), JSON.stringify(finding, null, 2));
       return finding;
     },
+    getFinding(id: string): Finding | null {
+      const path = join(dataDir, "findings", `${id}.json`);
+      if (!existsSync(path)) return null;
+      return FindingSchema.parse(JSON.parse(readFileSync(path, "utf8")));
+    },
     listFindings(): Finding[] {
       const dir = join(dataDir, "findings");
       if (!existsSync(dir)) return [];

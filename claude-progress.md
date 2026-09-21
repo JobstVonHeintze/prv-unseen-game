@@ -80,4 +80,10 @@
 - **red:** none for F-06. F-04 through F-06 still uncommitted (`commit: ask`).
 - **next:** fresh session. Carry-forward: more scripted bots, findings→proposal drafts, structured forms. Commit/push only when asked.
 
+## 2026-09-21T04:40:32Z — agent — F-07 findings become proposal drafts closed
+
+- **done:** `POST /v1/console/findings/{id}/propose` queues a pending proposal from a finding (author `human`); rehearsal `queue_proposals: true` queues one draft per missed-gate finding (author `ai`). Approve remains the only write. Player `/propose` is 404. 24 files / 40 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-21-F-07.md`. Plan `docs/plans/2026-09-21-findings-to-proposals.md` Status: done. Learning: `docs/learnings/2026-09-21-rehearsal-queue-proposals-opt-in.md`. Browser: Propose on “First night needs a look” queued pending `scene.first-night`; reject left YAML unchanged.
+- **red:** none for F-07. Commit/push authorized this turn.
+- **next:** remaining scripted bots (completionist, romantic, detective, saint); structured entity forms; LLM personas. Dependabot 3 moderate vulns on default branch (out of scope).
+
 

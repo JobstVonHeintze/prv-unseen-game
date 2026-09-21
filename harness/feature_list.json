@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "contrejour",
-  "updated_at": "2026-09-20T22:00:13Z",
+  "updated_at": "2026-09-21T04:40:25Z",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -189,6 +189,34 @@
       "owner": "sprint-runner",
       "created_at": "2026-09-20T21:57:00Z",
       "updated_at": "2026-09-20T22:00:13Z"
+    },
+    {
+      "id": "F-07",
+      "title": "Findings become proposal drafts",
+      "priority": "P0",
+      "area": "authoring",
+      "user_behavior": "An author turns a finding into a pending canon proposal for that entity; a rehearsal can opt in to queue those drafts; nothing writes until approve; Player never sees the queue.",
+      "verification_commands": [
+        "pnpm exec vitest run tests/contract/finding-propose.test.ts --reporter=dot",
+        "bash scripts/smoke.sh"
+      ],
+      "evidence": [
+        {
+          "kind": "test_run",
+          "ref": "pnpm exec vitest run tests/contract/finding-propose.test.ts --reporter=dot",
+          "ts": "2026-09-21T04:39:06Z"
+        },
+        {
+          "kind": "smoke_run",
+          "ref": "bash scripts/smoke.sh",
+          "ts": "2026-09-21T04:39:41Z"
+        }
+      ],
+      "status": "done",
+      "blocker": null,
+      "owner": "sprint-runner",
+      "created_at": "2026-09-21T04:37:00Z",
+      "updated_at": "2026-09-21T04:40:25Z"
     }
   ]
 }

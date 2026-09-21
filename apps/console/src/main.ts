@@ -1,6 +1,6 @@
 type Gate = { id: string; name: string; order: number; scene?: string };
 type KitRow = { id: string };
-type Finding = { id: string; entity_id: string; category: string; title: string; body: string; detail_axis?: string };
+type Finding = { id: string; entity_id: string; category: string; title: string; body: string; detail_axis?: string; author?: string };
 type Board = { id: string; entity_id: string; prompt: string; prompt_history: Array<{ prompt: string }>; image_url?: string };
 type Proposal = {
   id: string;
@@ -135,8 +135,18 @@ function render(): void {
           : "<p>No batch this session.</p>"
       }
       <h2>Findings</h2>
-      ${related.map((f) => `<div class="card"><strong>${f.category}</strong> ${f.detail_axis ?? ""}<p>${f.title}</p><p>${f.body}</p></div>`).join("") || "<p>None on this entity.</p>"}
-      ${findings.filter((f) => !relatedIds.has(f.entity_id)).map((f) => `<p>${f.entity_id}: ${f.title}</p>`).join("")}
+      ${
+        related
+          .map(
+            (f) => `<div class="card"><strong>${f.category}</strong> ${f.detail_axis ?? ""}<p>${f.title}</p><p>${f.body}</p>
+        <button data-propose="${f.id}">Propose</button></div>`,
+          )
+          .join("") || "<p>None on this entity.</p>"
+      }
+      ${findings
+        .filter((f) => !relatedIds.has(f.entity_id))
+        .map((f) => `<p>${f.entity_id}: ${f.title} <button data-propose="${f.id}">Propose</button></p>`)
+        .join("")}
       <h2>Storyboard</h2>
       ${board.map((b) => `<div class="card"><p>${b.prompt}</p><p>history ${b.prompt_history.length}</p>${b.image_url ? `<p>${b.image_url}</p>` : ""}</div>`).join("")}
       <input id="prompt" placeholder="Prompt" />
@@ -166,6 +176,12 @@ function render(): void {
     selected = (el as HTMLElement).dataset.id ?? null;
     render();
   }));
+  app.querySelectorAll("[data-propose]").forEach((el) =>
+    el.addEventListener("click", async () => {
+      await api(`/v1/console/findings/${(el as HTMLElement).dataset.propose}/propose`, { method: "POST" });
+      await refresh();
+    }),
+  );
   document.querySelector("#r-run")?.addEventListener("click", async () => {
     lastRehearsal = (await api("/v1/console/rehearsals", {
       method: "POST",

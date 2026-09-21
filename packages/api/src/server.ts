@@ -12,6 +12,7 @@ import {
   writeCanonFile,
   type Canon,
   type Finding,
+  type Proposal,
 } from "@contrejour/canon";
 import {
   consoleView,
@@ -32,6 +33,40 @@ import {
   type PlayerClient,
 } from "@contrejour/rehearsal";
 import type { Store } from "./store.js";
+
+function draftProposalFromFinding(
+  store: Store,
+  live: Canon,
+  root: string,
+  finding: Finding,
+  author: "human" | "ai",
+  after?: string,
+): { proposal: Proposal } | { error: "unknown-entity" | "invalid-path" } {
+  const rel = entityRelPath(finding.entity_id);
+  if (!rel) return { error: "unknown-entity" };
+  let before = "";
+  try {
+    before = readCanonFile(root, rel);
+  } catch {
+    return { error: "invalid-path" };
+  }
+  if (!before) return { error: "unknown-entity" };
+  const body = after ?? before;
+  const preview = previewProposal(live, rel, body);
+  return {
+    proposal: store.addProposal({
+      entity_id: finding.entity_id,
+      path: rel,
+      before,
+      after: body,
+      diff: unifiedDiff(before, body, rel),
+      author,
+      rationale: `${finding.title}\n\n${finding.body}`,
+      status: "pending",
+      validation: preview.issues,
+    }),
+  };
+}
 
 function inProcessPlayer(getLive: () => Canon, store: Store): PlayerClient {
   return {
@@ -208,6 +243,7 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         n?: number;
         seed_base?: number;
         max_evenings?: number;
+        queue_proposals?: boolean;
       };
       const bots = (body.bots?.length ? body.bots : ["drifter"]).map((b) => b.trim());
       if (bots.some((b) => !BOT_PICK[b])) {
@@ -234,6 +270,12 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
       const compiled = compileReport(live, traces);
       const drafts = findingsFromReport(compiled);
       const findings = drafts.map((d) => store.addFinding(d));
+      const proposals = body.queue_proposals
+        ? findings.flatMap((f) => {
+            const drafted = draftProposalFromFinding(store, live, root, f, "ai");
+            return "proposal" in drafted ? [drafted.proposal] : [];
+          })
+        : [];
       const record = store.saveRehearsal({
         id: `rehearsal.${randomUUID()}`,
         created_at: new Date().toISOString(),
@@ -241,10 +283,12 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         n,
         seed_base: seedBase,
         max_evenings: maxEvenings,
+        queue_proposals: Boolean(body.queue_proposals),
         ...compiled,
         finding_ids: findings.map((f) => f.id),
+        proposal_ids: proposals.map((p) => p.id),
       });
-      send(res, 201, { ...record, findings });
+      send(res, 201, { ...record, findings, proposals });
       return;
     }
     const rehearsalMatch = path.match(/^\/v1\/console\/rehearsals\/([^/]+)(?:\/(report))?$/);
@@ -443,6 +487,29 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
       return;
     }
 
+    const findingPropose = path.match(/^\/v1\/console\/findings\/([^/]+)\/propose$/);
+    if (findingPropose && method === "POST") {
+      const finding = store.getFinding(findingPropose[1]!);
+      if (!finding) {
+        send(res, 404, { error: "not-found" });
+        return;
+      }
+      const body = (await readBody(req)) as { after?: string; author?: "human" | "ai" };
+      const drafted = draftProposalFromFinding(
+        store,
+        live,
+        root,
+        finding,
+        body.author === "ai" ? "ai" : "human",
+        typeof body.after === "string" ? body.after : undefined,
+      );
+      if ("error" in drafted) {
+        send(res, 400, { error: drafted.error });
+        return;
+      }
+      send(res, 201, drafted.proposal);
+      return;
+    }
     if (path === "/v1/console/findings" && method === "GET") {
       send(res, 200, store.listFindings());
       return;
