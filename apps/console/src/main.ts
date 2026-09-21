@@ -40,6 +40,7 @@ let editorYaml = "";
 let editorDiff = "";
 let editorIssues: Issue[] = [];
 let lastRehearsal: Rehearsal | null = null;
+let lastBot = "drifter";
 
 async function api(path: string, init?: RequestInit) {
   const res = await fetch(path, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
@@ -126,7 +127,12 @@ function render(): void {
     </main>
     <aside>
       <h2>Rehearsal</h2>
-      <button class="primary" id="r-run">Run drifter</button>
+      <select id="r-bot" aria-label="bot">
+        ${["drifter", "completionist", "romantic", "detective", "dark-optimiser", "saint"]
+          .map((b) => `<option value="${b}"${b === lastBot ? " selected" : ""}>${b}</option>`)
+          .join("")}
+      </select>
+      <button class="primary" id="r-run">Run</button>
       ${
         lastRehearsal
           ? `<div class="card"><p>${lastRehearsal.id}</p>
@@ -183,9 +189,11 @@ function render(): void {
     }),
   );
   document.querySelector("#r-run")?.addEventListener("click", async () => {
+    lastBot = (document.querySelector("#r-bot") as HTMLSelectElement | null)?.value || "drifter";
+    const bot = lastBot;
     lastRehearsal = (await api("/v1/console/rehearsals", {
       method: "POST",
-      body: JSON.stringify({ bots: ["drifter"], n: 1, seed_base: 11, max_evenings: 80 }),
+      body: JSON.stringify({ bots: [bot], n: 1, seed_base: 11, max_evenings: 80 }),
     })) as Rehearsal;
     await refresh();
   });

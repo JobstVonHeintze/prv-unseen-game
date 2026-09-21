@@ -1,11 +1,13 @@
 export interface PlayerViewSlice {
   runId?: string;
-  currentScene: { id: string; choices: Array<{ id: string }> } | null;
+  currentScene: { id: string; choices: Array<{ id: string; label?: string }> } | null;
   sceneOptions: Array<{ id: string }>;
   canAdvance: boolean;
   askingTheory: boolean;
   theoryOptions: string[];
   vault?: Array<{ secretId: string }>;
+  recipients?: Array<{ id: string }>;
+  captures?: Array<{ id: string; marked: boolean }>;
 }
 
 export interface PlayerClient {
@@ -17,7 +19,7 @@ export interface PlayerClient {
 
 export async function runDrifter(client: PlayerClient, seed = 1, maxEvenings = 80): Promise<string[]> {
   const { playScript } = await import("./play.js");
-  const trace = await playScript(client, { seed, maxEvenings, pick: "first", bot: "drifter" });
+  const trace = await playScript(client, { seed, maxEvenings, bot: "drifter" });
   return trace.gates;
 }
 

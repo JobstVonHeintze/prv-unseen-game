@@ -60,4 +60,23 @@ describe("rehearsal desk", () => {
     });
     expect(sneak.status).toBe(404);
   });
+
+  it("accepts the named bots and rejects an unknown one", async () => {
+    const s = await serveSlice();
+    handles.push(s.close);
+    for (const bot of ["completionist", "romantic", "detective", "saint"]) {
+      const res = await json(s.url, "/v1/console/rehearsals", {
+        method: "POST",
+        body: JSON.stringify({ bots: [bot], n: 1, seed_base: 3, max_evenings: 2 }),
+      });
+      expect(res.status).toBe(201);
+      const body = res.body as { traces: Array<{ bot: string }> };
+      expect(body.traces[0]?.bot).toBe(bot);
+    }
+    const bad = await json(s.url, "/v1/console/rehearsals", {
+      method: "POST",
+      body: JSON.stringify({ bots: ["karma-farmer"] }),
+    });
+    expect(bad.status).toBe(400);
+  });
 });

@@ -86,4 +86,10 @@
 - **red:** none for F-07. Commit/push authorized this turn.
 - **next:** remaining scripted bots (completionist, romantic, detective, saint); structured entity forms; LLM personas. Dependabot 3 moderate vulns on default branch (out of scope).
 
+## 2026-09-21T04:43:41Z — agent — F-08 remaining scripted bots closed
+
+- **done:** completionist / romantic / detective / saint pick from canon tags and effects; detective may `send_secret` to a tell recipient; saint refuses lie/leverage. Console bot select. Player still 404. 25 files / 45 tests. `bash scripts/smoke.sh` ok. Review `docs/reviews/2026-09-21-F-08.md`. Plan `docs/plans/2026-09-21-scripted-bots.md` Status: done. Learning: `docs/learnings/2026-09-21-bots-score-canon-not-player-tags.md`. Browser: romantic run `rehearsal.ff0b15f0-…` listed g1–g7, missed none.
+- **red:** none for F-08. Commit/push authorized this turn.
+- **next:** structured entity forms; LLM personas; `condition.caio` when that canon exists. Dependabot 3 moderate vulns (out of scope).
+
 

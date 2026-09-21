@@ -12,7 +12,7 @@ const canon = {
 describe("rehearsal report", () => {
   it("drafts a timing finding for a missed gate scene", () => {
     const traces: PlayTrace[] = [
-      { runId: "r", bot: "drifter", seed: 1, gates: ["gate.p1.g1"], scenes: ["scene.first-night"], secrets: [] },
+      { runId: "r", bot: "drifter", seed: 1, gates: ["gate.p1.g1"], scenes: ["scene.first-night"], secrets: [], sent: [] },
     ];
     const report = compileReport(canon, traces);
     expect(report.missed_gate_scenes).toEqual([{ gateId: "gate.p1.g7", sceneId: "scene.dalia-pulse" }]);

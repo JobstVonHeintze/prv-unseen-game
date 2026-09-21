@@ -8,3 +8,4 @@ export {
   type RehearsalReport,
   type FindingDraft,
 } from "./play.js";
+export { BOTS, isBot, pickScene, pickChoice, pickSend, type BotName, type PolicyCtx } from "./policies.js";

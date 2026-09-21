@@ -1,5 +1,6 @@
 import type { Canon } from "@contrejour/canon";
 import type { PlayerClient } from "./drifter.js";
+import { pickChoice, pickScene, pickSend, type PolicyCtx } from "./policies.js";
 
 export type PlayTrace = {
   runId: string;
@@ -8,6 +9,7 @@ export type PlayTrace = {
   gates: string[];
   scenes: string[];
   secrets: string[];
+  sent: string[];
 };
 
 export type RehearsalReport = {
@@ -26,20 +28,18 @@ export type FindingDraft = {
   run_id?: string;
 };
 
-function pick<T>(items: T[], which: "first" | "last"): T | undefined {
-  if (items.length === 0) return undefined;
-  return which === "last" ? items[items.length - 1] : items[0];
-}
-
 export async function playScript(
   client: PlayerClient,
-  opts: { seed: number; maxEvenings: number; pick: "first" | "last"; bot: string },
+  opts: { seed: number; maxEvenings: number; bot: string; canon?: Canon },
 ): Promise<PlayTrace> {
   const first = await client.createRun(opts.seed);
   const runId = first.runId;
   let view = first;
   let playedFree = false;
   const scenes: string[] = [];
+  const taken: string[] = [];
+  const sent: string[] = [];
+  const ctx = (): PolicyCtx => ({ canon: opts.canon, visited: scenes, taken, sent });
   const noteScene = (id: string | undefined) => {
     if (id && !scenes.includes(id)) scenes.push(id);
   };
@@ -49,21 +49,28 @@ export async function playScript(
       view = await client.act(runId, { type: "answer_theory", answer: view.theoryOptions[0] });
     } else if (view.currentScene) {
       noteScene(view.currentScene.id);
-      const choice = pick(view.currentScene.choices, opts.pick);
+      const choice = pickChoice(opts.bot, view.currentScene.choices, view.currentScene.id, ctx());
       if (!choice) break;
+      taken.push(`${view.currentScene.id}:${choice.id}`);
       view = await client.act(runId, { type: "choose", choiceId: choice.id });
       noteScene(view.currentScene?.id);
       playedFree = true;
-    } else if (!playedFree && view.sceneOptions.length) {
-      const scene = pick(view.sceneOptions, opts.pick);
-      if (!scene) break;
-      view = await client.act(runId, { type: "enter_scene", sceneId: scene.id });
-      noteScene(view.currentScene?.id);
-    } else if (view.canAdvance) {
-      view = await client.act(runId, { type: "advance_evening" });
-      playedFree = false;
     } else {
-      break;
+      const send = pickSend(opts.bot, view, ctx());
+      if (send) {
+        sent.push(send.secretId);
+        view = await client.act(runId, send);
+      } else if (!playedFree && view.sceneOptions.length) {
+        const scene = pickScene(opts.bot, view.sceneOptions, ctx());
+        if (!scene) break;
+        view = await client.act(runId, { type: "enter_scene", sceneId: scene.id });
+        noteScene(view.currentScene?.id);
+      } else if (view.canAdvance) {
+        view = await client.act(runId, { type: "advance_evening" });
+        playedFree = false;
+      } else {
+        break;
+      }
     }
     noteScene(view.currentScene?.id);
     const tl = await client.timeline(runId);
@@ -78,6 +85,7 @@ export async function playScript(
     gates: tl.evenings.flatMap((e) => e.gates),
     scenes,
     secrets: (latest.vault ?? []).map((v) => v.secretId),
+    sent,
   };
 }
 
@@ -102,7 +110,12 @@ export function findingsFromReport(report: RehearsalReport): FindingDraft[] {
   }));
 }
 
+/** @deprecated use `isBot` — kept so first/last aliases stay readable. */
 export const BOT_PICK: Record<string, "first" | "last"> = {
   drifter: "first",
+  completionist: "first",
+  romantic: "first",
+  detective: "first",
   "dark-optimiser": "last",
+  saint: "first",
 };

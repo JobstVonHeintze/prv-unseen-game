@@ -26,7 +26,7 @@ import {
   type Event,
 } from "@contrejour/engine";
 import {
-  BOT_PICK,
+  isBot,
   compileReport,
   findingsFromReport,
   playScript,
@@ -246,7 +246,7 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
         queue_proposals?: boolean;
       };
       const bots = (body.bots?.length ? body.bots : ["drifter"]).map((b) => b.trim());
-      if (bots.some((b) => !BOT_PICK[b])) {
+      if (bots.some((b) => !isBot(b))) {
         send(res, 400, { error: "unknown-bot", bots });
         return;
       }
@@ -261,8 +261,8 @@ export function createApi(canon: Canon, store: Store, options: { canonRoot: stri
             await playScript(client, {
               seed: seedBase + i,
               maxEvenings,
-              pick: BOT_PICK[bot]!,
               bot,
+              canon: live,
             }),
           );
         }
